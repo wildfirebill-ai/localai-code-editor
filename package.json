@@ -1,0 +1,33 @@
+{
+  "name": "localai-code-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-platform local-LLM code editor with MCP, agentic tools, and a full git panel",
+  "license": "MIT",
+  "packageManager": "pnpm@10.13.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "electron"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "dev:server": "pnpm --filter @localai/server dev",
+    "dev:web": "pnpm --filter @localai/web dev",
+    "dev:desktop": "pnpm --filter @localai/desktop dev",
+    "docker:build": "docker build -t localai-code-editor .",
+    "docker:run": "docker run -p 4801:4801 -v ${PWD}:/workspace -v localai-data:/data localai-code-editor"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2",
+    "@types/node": "^22.9.0"
+  }
+}

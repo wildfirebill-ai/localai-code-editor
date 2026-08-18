@@ -1,0 +1,38 @@
+{
+  "workspace": "/workspace",
+  "port": 4801,
+  "host": "0.0.0.0",
+  "providers": [
+    { "id": "ollama", "label": "Ollama", "baseUrl": "http://localhost:11434/v1" },
+    { "id": "lmstudio", "label": "LM Studio", "baseUrl": "http://localhost:1234/v1" },
+    { "id": "llamacpp", "label": "llama.cpp server", "baseUrl": "http://localhost:8080/v1" },
+    { "id": "custom", "label": "Custom OpenAI-compatible", "baseUrl": "http://localhost:11434/v1" }
+  ],
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+    }
+  },
+  "languageServers": [
+    {
+      "id": "typescript",
+      "language": "typescript",
+      "extensions": [".ts", ".tsx", ".js", ".jsx"],
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "label": "TypeScript"
+    },
+    {
+      "id": "python",
+      "language": "python",
+      "extensions": [".py"],
+      "command": "pyright-langserver",
+      "args": ["--stdio"],
+      "label": "Python"
+    }
+  ],
+  "protectedPaths": [".git"],
+  "allowShell": true
+}

@@ -1,0 +1,28 @@
+services:
+  localai-code-editor:
+    image: ghcr.io/<your-github-user>/localai-code-editor:latest
+    container_name: localai-code-editor
+    hostname: localai-code-editor
+    restart: unless-stopped
+    # Workspace to edit is mounted read-write here
+    volumes:
+      - /mnt/user/your_repo:/workspace
+    # Optional: mount a custom config
+    # - /mnt/user/appdata/localai/localai.config.json:/app/localai.config.json:ro
+    # --- Option A (edit + build + test docker programs from the editor) ---
+    # Mount the host docker socket + give the container the docker CLI so the
+    # editor's agent/terminal can run `docker build` / `docker compose`.
+    # WARNING: this grants root-equivalent control over the Docker host to
+    # anything that reaches the editor (incl. its shell-capable agent). Only
+    # use on a trusted single-user server; never if untrusted users/repos can
+    # reach the web UI.
+    - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "4801:4801"
+    # For Unraid templates, set WebUI to http://<ip>:4801
+    environment:
+      LOCALAI_HOST: 0.0.0.0
+      LOCALAI_PORT: 4801
+    # Programs you build/test via the editor start as sibling containers on
+    # the default bridge; give the editor a fixed name so they can reach it,
+    # and reach them by container name on the same network.

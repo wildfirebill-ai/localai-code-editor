@@ -1,0 +1,46 @@
+{
+  "name": "@localai/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsc -p tsconfig.json && electron .",
+    "start": "electron .",
+    "dist": "pnpm build && electron-builder",
+    "dist:win": "pnpm build && electron-builder --win",
+    "dist:mac": "pnpm build && electron-builder --mac",
+    "dist:linux": "pnpm build && electron-builder --linux",
+    "lint": "echo 'no linter configured yet'",
+    "test": "echo 'no tests yet'"
+  },
+  "build": {
+    "appId": "com.localai.codeeditor",
+    "productName": "LocalAI Code Editor",
+    "files": [
+      "dist/**/*",
+      "node_modules/@localai/**/*",
+      "node_modules/simple-git/**/*",
+      "node_modules/ws/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../../packages/server",
+        "to": "server",
+        "filter": ["dist/**/*", "package.json"]
+      }
+    ],
+    "win": { "target": ["nsis", "zip"] },
+    "mac": { "target": ["dmg", "zip"], "category": "public.app-category.developer-tools" },
+    "linux": {
+      "target": ["AppImage", "deb", "tar.gz"],
+      "category": "Development"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3"
+  }
+}

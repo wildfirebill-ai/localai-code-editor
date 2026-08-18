@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.git
+.gitignore
+.git_test_ws
+.release
+Dockerfile
+.dockerignore
+.github
+README.md
+*.log
+.git

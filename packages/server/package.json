@@ -1,0 +1,35 @@
+{
+  "name": "@localai/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "echo 'no linter configured yet'",
+    "test": "echo 'no tests yet'"
+  },
+  "dependencies": {
+    "@localai/agent": "workspace:*",
+    "@localai/git": "workspace:*",
+    "@localai/lsp": "workspace:*",
+    "@localai/mcp": "workspace:*",
+    "@localai/provider": "workspace:*",
+    "@localai/skills": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.6.3"
+  }
+}
