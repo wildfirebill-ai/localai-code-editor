@@ -2,6 +2,12 @@
   "name": "@localai/desktop",
   "version": "0.1.0",
   "private": true,
+  "description": "Multi-platform local-LLM code editor with MCP, agentic tools, and a full git panel",
+  "homepage": "https://github.com/wildfirebill-ai/localai-code-editor",
+  "author": {
+    "name": "wildfirebill",
+    "email": "wildfirebill@users.noreply.github.com"
+  },
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
