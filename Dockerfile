@@ -4,7 +4,7 @@ WORKDIR /app
 RUN npm install -g pnpm@10
 
 # Leverage layer caching: install deps first, then copy source
-COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages ./packages
 COPY apps ./apps
 
