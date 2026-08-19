@@ -51,7 +51,7 @@ jobs:
         run: pnpm test
 
       - name: Upload web build
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: web-${{ matrix.os }}
           path: apps/web/dist
@@ -67,12 +67,22 @@ jobs:
           - os: windows-latest
             cmd: dist:win
             artifact: win
+            glob: |
+              apps/desktop/release/*.exe
+              apps/desktop/release/*.zip
           - os: macos-latest
             cmd: dist:mac
             artifact: mac
+            glob: |
+              apps/desktop/release/*.dmg
+              apps/desktop/release/*.zip
           - os: ubuntu-latest
             cmd: dist:linux
             artifact: linux
+            glob: |
+              apps/desktop/release/*.AppImage
+              apps/desktop/release/*.deb
+              apps/desktop/release/*.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -97,16 +107,10 @@ jobs:
         run: pnpm ${{ matrix.cmd }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: localai-editor-${{ matrix.artifact }}
-          path: |
-            apps/desktop/release/*.exe
-            apps/desktop/release/*.dmg
-            apps/desktop/release/*.AppImage
-            apps/desktop/release/*.deb
-            apps/desktop/release/*.zip
-            apps/desktop/release/*.tar.gz
+          path: ${{ matrix.glob }}
           if-no-files-found: warn
 
   # ---- GitHub Release for tagged versions ----
@@ -117,7 +121,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           path: release-artifacts
 
