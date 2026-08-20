@@ -68,14 +68,14 @@ jobs:
             cmd: dist:win
             artifact: win
             glob: |
-              apps/desktop/dist/**/*.exe
-              apps/desktop/dist/**/*.zip
+              apps/desktop/dist/*.exe
+              apps/desktop/dist/*.zip
           - os: macos-latest
             cmd: dist:mac
             artifact: mac
             glob: |
-              apps/desktop/dist/**/*.dmg
-              apps/desktop/dist/**/*.zip
+              apps/desktop/dist/*.dmg
+              apps/desktop/dist/*.zip
           - os: ubuntu-latest
             cmd: dist:linux
             artifact: linux
