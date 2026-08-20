@@ -2,7 +2,7 @@
   "name": "localai-code-editor",
   "version": "0.1.0",
   "private": true,
-  "description": "Multi-platform local-LLM code editor with MCP, agentic tools, and a full git panel",
+  "description": "A free, open-source, self-hosted AI code editor powered entirely by your local LLM — no cloud, no API keys, no telemetry. Features agentic AI assistant, MCP support, agent skills, LSP IntelliSense, and full git panel.",
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "pnpm": {
@@ -29,5 +29,42 @@
     "typescript": "^5.6.3",
     "tsx": "^4.19.2",
     "@types/node": "^22.9.0"
+  },
+  "keywords": [
+    "ai-code-editor",
+    "local-llm",
+    "ollama",
+    "mcp",
+    "model-context-protocol",
+    "agentic-ai",
+    "code-editor",
+    "typescript",
+    "electron",
+    "monaco-editor",
+    "lsp",
+    "language-server-protocol",
+    "git-panel",
+    "offline-ai",
+    "privacy-first",
+    "self-hosted",
+    "unraid",
+    "docker"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wildfirebill-ai/localai-code-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wildfirebill-ai/localai-code-editor/issues"
+  },
+  "homepage": "https://github.com/wildfirebill-ai/localai-code-editor#readme",
+  "author": {
+    "name": "wildfirebill",
+    "email": "wildfirebill@users.noreply.github.com",
+    "url": "https://github.com/wildfirebill"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/wildfirebill"
   }
 }
