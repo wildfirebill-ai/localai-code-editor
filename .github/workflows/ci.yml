@@ -68,21 +68,21 @@ jobs:
             cmd: dist:win
             artifact: win
             glob: |
-              apps/desktop/dist/*.exe
-              apps/desktop/dist/*.zip
+              apps/desktop/dist/**/*.exe
+              apps/desktop/dist/**/*.zip
           - os: macos-latest
             cmd: dist:mac
             artifact: mac
             glob: |
-              apps/desktop/dist/*.dmg
-              apps/desktop/dist/*.zip
+              apps/desktop/dist/**/*.dmg
+              apps/desktop/dist/**/*.zip
           - os: ubuntu-latest
             cmd: dist:linux
             artifact: linux
             glob: |
-              apps/desktop/dist/*.AppImage
-              apps/desktop/dist/*.deb
-              apps/desktop/dist/*.tar.gz
+              apps/desktop/dist/**/*.AppImage
+              apps/desktop/dist/**/*.deb
+              apps/desktop/dist/**/*.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
