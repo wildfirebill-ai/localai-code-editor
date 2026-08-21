@@ -121,3 +121,13 @@ Found something not on this page? Please report privately rather than opening a 
 📧 **security@wildfirebill.ai** · [GitHub Security Advisories](https://github.com/wildfirebill-ai/localai-code-editor/security/advisories/new)
 
 Process, timelines, and severity definitions: [SECURITY.md](SECURITY.md)
+
+---
+
+## 🤖 Automated scans
+
+Releases are scanned automatically (repository dependencies + the published Docker image) via the `security-scan` workflow — weekly and on every release. Results are published below.
+
+<!-- SECURITY-SCAN:START -->
+_No scan results yet. Run the **security-scan** workflow or wait for the next release._
+<!-- SECURITY-SCAN:END -->

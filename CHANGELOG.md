@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Security scan workflow** (`security-scan.yml`) - runs on every release, weekly schedule, and manual dispatch. Scans repository dependencies (pnpm audit + Trivy fs: vulns/misconfig/secrets) and the published Docker image (Trivy, HIGH/CRITICAL), then publishes results into an auto-generated section at the end of VULNERABILITIES.md. Scan history stays public and current.
+- Docker images now also publish a `latest` tag on release (README referenced it; previously only semver tags existed).
+
+### Added
 - **VULNERABILITIES.md** - public transparency document listing every known weakness, attack surface, and accepted design tradeoff (prompt injection via agent, unauthenticated server/WS, Docker socket, plaintext keys, shell-bypasses-protectedPaths, and more) with scenarios, mitigations, and a user hardening checklist.
 
 ### Added

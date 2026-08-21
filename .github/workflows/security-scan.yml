@@ -1,0 +1,183 @@
+name: Security Scan
+
+# Vulnerability scanning for releases: repository dependencies + published Docker
+# image. Results are appended to VULNERABILITIES.md (auto-generated section) so
+# the public transparency doc always reflects the latest scan.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to scan (defaults to newest release)'
+        required: false
+        default: 'latest'
+  release:
+    types: [published]
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---- Repository dependency vulnerabilities (lockfile + fs) ----
+  repo-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit
+        id: audit
+        run: |
+          mkdir -p scan-results
+          set +e
+          pnpm audit --json > scan-results/pnpm-audit.json
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "pnpm audit exited with $code (non-zero = advisories found)"
+
+      - name: Trivy filesystem scan (lockfiles & configs)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: scan-results/trivy-fs.json
+          severity: HIGH,CRITICAL
+          scanners: vuln,misconfig,secret
+          exit-code: '0'
+
+      - name: Human-readable summary
+        if: always()
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          scanners: vuln,misconfig,secret
+          exit-code: '0'
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-scan
+          path: scan-results/
+          retention-days: 14
+          if-no-files-found: error
+
+  # ---- Published Docker image vulnerabilities ----
+  image-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            # release tag v1.2.3 -> image tag 1.2.3
+            echo "tag=${{ github.event.release.tag_name }}" | sed 's/^v//' >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.inputs.image_tag || 'latest' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull image
+        run: docker pull ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+          format: json
+          output: scan-results/trivy-image.json
+          severity: HIGH,CRITICAL
+          scanners: vuln
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Human-readable summary
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+          format: table
+          severity: HIGH,CRITICAL
+          scanners: vuln
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-scan
+          path: scan-results/
+          retention-days: 14
+          if-no-files-found: error
+
+  # ---- Publish results into VULNERABILITIES.md ----
+  publish-report:
+    needs: [repo-scan, image-scan]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download scan artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: scan-artifacts
+
+      - name: Generate report section
+        id: report
+        env:
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ github.event.inputs.image_tag }}
+        run: node scripts/generate-security-report.js
+
+      - name: Commit updated VULNERABILITIES.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VULNERABILITIES.md
+          if git diff --cached --quiet; then
+            echo "No changes to VULNERABILITIES.md — nothing to commit."
+          else
+            git commit -m "chore(security): update automated vulnerability scan results [skip ci]"
+            git push origin HEAD:main
+          fi
