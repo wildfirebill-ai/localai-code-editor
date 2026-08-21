@@ -115,6 +115,9 @@ jobs:
       - name: Pull image
         run: docker pull ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
 
+      - name: Prepare results directory
+        run: mkdir -p scan-results
+
       - name: Trivy image scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
