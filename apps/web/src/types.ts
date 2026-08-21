@@ -1,5 +1,15 @@
 /** UI-facing types mirroring the server RPC payloads. */
 
+/** Bridge exposed by the Electron desktop shell (absent in plain browser mode). */
+declare global {
+  interface Window {
+    localai?: {
+      pickWorkspace(): Promise<string | null>;
+      getWorkspace(): Promise<string>;
+    };
+  }
+}
+
 export interface ProviderInfo {
   id: string;
   label: string;

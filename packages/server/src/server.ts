@@ -1,13 +1,13 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
-import { resolve, extname, join } from 'node:path';
+import { resolve, extname, join, isAbsolute } from 'node:path';
 import { homedir } from 'node:os';
 import { WebSocketServer, WebSocket } from 'ws';
 import { OpenAICompatProvider, ProviderRegistry, type ChatMessage } from '@localai/provider';
 import { McpHost, type McpServerConfig } from '@localai/mcp';
 import { GitService } from '@localai/git';
 import { LanguageServerHost } from '@localai/lsp';
-import { runAgent, builtinTools, defaultSystemPrompt, type Tool, type ToolFs } from '@localai/agent';
+import { runAgent, builtinTools, defaultSystemPrompt, type Tool } from '@localai/agent';
 import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
 import { resolveWebDist } from './webdist.js';
@@ -16,16 +16,13 @@ import type { ServerConfig } from './config.js';
 
 type RpcParams = Record<string, unknown>;
 
-/** Minimal fs surface the agent's shell/list tools need. */
-interface EditorFs extends ToolFs {}
-
 export class EditorServer {
   readonly providerRegistry: ProviderRegistry;
   readonly mcpHost: McpHost;
-  readonly git: GitService;
-  readonly fs: EditorFs;
-  readonly skills: SkillStore;
-  readonly lsp: LanguageServerHost;
+  git: GitService;
+  fs: WorkspaceFs;
+  skills: SkillStore;
+  lsp: LanguageServerHost;
   private readonly http: ReturnType<typeof createServer>;
   private readonly wss: WebSocketServer;
 
@@ -353,6 +350,10 @@ export class EditorServer {
       case 'fs.list': return this.sendResult(ws, id, await this.fs.listFiles(String(params.path ?? '')));
       case 'fs.read': return this.sendResult(ws, id, await this.fs.readFile(String(params.path)));
       case 'fs.write': { await this.fs.writeFile(String(params.path), String(params.content)); return this.sendResult(ws, id, { ok: true }); }
+      case 'fs.createFile': { await this.fs.createFile(String(params.path)); return this.sendResult(ws, id, { ok: true }); }
+      case 'fs.createDir': { await this.fs.createDir(String(params.path)); return this.sendResult(ws, id, { ok: true }); }
+      case 'fs.rename': { await this.fs.renamePath(String(params.path), String(params.newName)); return this.sendResult(ws, id, { ok: true }); }
+      case 'fs.delete': { await this.fs.deletePath(String(params.path)); return this.sendResult(ws, id, { ok: true }); }
       case 'fs.stat': {
         try {
           const info = await stat(resolve(this.config.workspace, String(params.path)));
@@ -360,6 +361,14 @@ export class EditorServer {
         } catch {
           return this.sendResult(ws, id, { exists: false });
         }
+      }
+
+      // ---- Workspace ----
+      case 'workspace.get':
+        return this.sendResult(ws, id, { workspace: this.config.workspace });
+      case 'workspace.set': {
+        const result = await this.setWorkspace(String(params.path ?? ''));
+        return this.sendResult(ws, id, result);
       }
 
       default:
@@ -373,6 +382,27 @@ export class EditorServer {
 
   private sendError(ws: WebSocket, id: number | undefined, code: number, message: string): void {
     ws.send(JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } }));
+  }
+
+  /** Switch the workspace at runtime: rebinds fs, git, skills, and LSP hosts. */
+  private async setWorkspace(dir: string): Promise<{ ok: true; workspace: string }> {
+    const target = resolve(dir.trim());
+    if (!isAbsolute(target)) throw new Error('Workspace path must be absolute');
+    const info = await stat(target).catch(() => null);
+    if (!info || !info.isDirectory()) throw new Error(`Not a directory: ${target}`);
+
+    await this.lsp.stopAll();
+    this.config.workspace = target;
+    this.git = new GitService(target);
+    this.fs = new WorkspaceFs(target);
+    this.skills = new SkillStore();
+    void this.skills.load({
+      projectDir: target,
+      userDir: defaultUserSkillsDir(homedir()),
+    });
+    this.lsp = new LanguageServerHost(target, this.config.languageServers);
+    console.log(`Workspace switched to ${target}`);
+    return { ok: true, workspace: target };
   }
 
   async stop(): Promise<void> {

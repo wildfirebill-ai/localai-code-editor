@@ -31,9 +31,11 @@ const PRESETS: { id: string; label: string; defaultBaseUrl: string; hint: string
 const EMPTY_PROV: ProvForm = { id: '', label: '', baseUrl: '', apiKey: '' };
 
 export function SettingsPanel() {
-  const { client, providers, providerHealth, mcpStatus, mcpTools, lspStatus, refresh } = useApp();
+  const { client, workspace, setWorkspace, providers, providerHealth, mcpStatus, mcpTools, lspStatus, refresh } = useApp();
   const [form, setForm] = useState<McpForm>(EMPTY_MCP);
   const [err, setErr] = useState('');
+  const [wsInput, setWsInput] = useState('');
+  const [wsErr, setWsErr] = useState('');
 
   const [provForm, setProvForm] = useState<ProvForm>(EMPTY_PROV);
   const [provEditing, setProvEditing] = useState<string | null>(null);
@@ -130,8 +132,48 @@ export function SettingsPanel() {
     }
   };
 
+  // ---- Workspace ----
+
+  const pickFolder = async () => {
+    setWsErr('');
+    const picked = await window.localai?.pickWorkspace();
+    if (!picked || picked === workspace) return;
+    try {
+      await setWorkspace(picked);
+    } catch (e) {
+      setWsErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const setWsManually = async () => {
+    setWsErr('');
+    if (!wsInput.trim()) return;
+    try {
+      await setWorkspace(wsInput.trim());
+      setWsInput('');
+    } catch (e) {
+      setWsErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   return (
     <div className="settings-panel">
+      <div className="panel-title">Workspace</div>
+      <p className="muted" style={{ padding: '0 10px', margin: '0 0 6px', wordBreak: 'break-all' }}>{workspace || '…'}</p>
+      <div className="form" style={{ paddingBottom: 8 }}>
+        {window.localai && (
+          <button className="btn primary" onClick={pickFolder}>Open Folder…</button>
+        )}
+        <input
+          placeholder="Or type an absolute path…"
+          value={wsInput}
+          onChange={(e) => setWsInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && void setWsManually()}
+        />
+        <button className="btn tiny" onClick={setWsManually}>Set</button>
+        {wsErr && <p className="error">{wsErr}</p>}
+      </div>
+
       <div className="panel-title">LLM Providers</div>
       <div className="mcp-status">
         <ul className="changes">

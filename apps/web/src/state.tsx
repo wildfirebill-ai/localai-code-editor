@@ -5,6 +5,7 @@ import type { AgentEvent, ChatEntry, ModelInfo, ProviderInfo, ProviderHealth, Re
 interface AppState {
   client: RpcClient;
   connected: boolean;
+  workspace: string;
   providers: ProviderInfo[];
   providerHealth: Record<string, ProviderHealth>;
   models: ModelInfo[];
@@ -18,6 +19,7 @@ interface AppState {
   running: boolean;
   setActiveProvider: (id: string) => void;
   setActiveModel: (id: string) => void;
+  setWorkspace: (path: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendPrompt: (prompt: string) => Promise<void>;
   stop: () => void;
@@ -36,6 +38,7 @@ export function useApp(): AppState {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [client] = useState(() => new RpcClient());
   const [connected, setConnected] = useState(false);
+  const [workspace, setWorkspacePath] = useState('');
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [providerHealth, setProviderHealth] = useState<Record<string, ProviderHealth>>({});
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -64,6 +67,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
+      const ws = await client.request<{ workspace: string }>('workspace.get');
+      setWorkspacePath(ws.workspace);
       const provs = await client.request<{ providers: ProviderInfo[] }>('providers.list');
       const list = provs.providers ?? [];
       setProviders(list);
@@ -154,9 +159,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRunning(false);
   };
 
+  const setWorkspace = async (path: string) => {
+    await client.request('workspace.set', { path });
+    setActiveModel('');
+    setModels([]);
+    await refresh();
+  };
+
   const value: AppState = {
     client,
     connected,
+    workspace,
     providers,
     providerHealth,
     models,
@@ -170,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     running,
     setActiveProvider: onProviderChange,
     setActiveModel,
+    setWorkspace,
     refresh,
     sendPrompt,
     stop,

@@ -1,5 +1,5 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { resolve, isAbsolute, relative, dirname, sep } from 'node:path';
+import { mkdir, readFile, readdir, rename, rm, writeFile, stat } from 'node:fs/promises';
+import { resolve, isAbsolute, relative, dirname, sep, join } from 'node:path';
 import type { ToolFs } from '@localai/agent';
 
 /**
@@ -45,5 +45,47 @@ export class WorkspaceFs implements ToolFs {
     } catch {
       return false;
     }
+  }
+
+  /** Create an empty file. Fails if it already exists. */
+  async createFile(path: string): Promise<void> {
+    const target = this.resolve(path);
+    try {
+      await stat(target);
+      throw new Error(`Already exists: ${path}`);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+    }
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, '', 'utf-8');
+  }
+
+  /** Create a directory (and parents). */
+  async createDir(path: string): Promise<void> {
+    await mkdir(this.resolve(path), { recursive: true });
+  }
+
+  /** Rename/move within the workspace. newName must be a bare name or relative subpath. */
+  async renamePath(path: string, newName: string): Promise<void> {
+    const clean = newName.trim().replace(/^[\\/]+|[\\/]+$/g, '');
+    if (!clean || clean.split(/[\\/]/).includes('..')) throw new Error(`Invalid name: ${newName}`);
+    const from = this.resolve(path);
+    const to = this.resolve(join(dirname(this.resolve(path)), clean));
+    try {
+      await rename(from, to);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === 'ENOTEMPTY' || (e as NodeJS.ErrnoException).code === 'EEXIST') {
+        throw new Error(`Target already exists: ${clean}`);
+      }
+      throw e;
+    }
+  }
+
+  /** Delete a file or directory (recursive). The workspace root itself is protected. */
+  async deletePath(path: string): Promise<void> {
+    const target = this.resolve(path);
+    const rel = relative(this.root, target);
+    if (!rel || rel.startsWith('..')) throw new Error('Refusing to delete the workspace root');
+    await rm(target, { recursive: true, force: false });
   }
 }

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -30,6 +30,8 @@ function safeLog(fn: () => void): void {
 
 let server: ChildProcess | null = null;
 let window: BrowserWindow | null = null;
+/** Workspace the backend was started with (also served over IPC). */
+let currentWorkspace = '';
 let stderrTail = '';
 
 function startServer(workspace: string): ChildProcess {
@@ -122,6 +124,7 @@ async function createWindow(): Promise<void> {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: join(__dirname, 'preload.js'),
     },
   });
   // Open external links in the OS browser.
@@ -132,8 +135,31 @@ async function createWindow(): Promise<void> {
   await window.loadURL(URL);
 }
 
+/** Native folder picker for the renderer (exposed via preload). */
+ipcMain.handle('pick-workspace', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Open project folder',
+    properties: ['openDirectory'],
+    defaultPath: currentWorkspace || undefined,
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.handle('get-workspace', () => currentWorkspace);
+
 app.whenReady().then(async () => {
-  const workspace = process.env.LOCALAI_WORKSPACE || app.getPath('documents');
+  let workspace = process.env.LOCALAI_WORKSPACE || '';
+  // No workspace configured? Ask up front so the editor opens something useful.
+  if (!workspace) {
+    const picked = await dialog.showOpenDialog({
+      title: 'Open a project folder',
+      message: 'Choose the folder you want to edit',
+      properties: ['openDirectory'],
+    });
+    workspace = (!picked.canceled && picked.filePaths[0]) || app.getPath('documents');
+  }
+  currentWorkspace = workspace;
   try {
     server = startServer(workspace);
     await waitForServer();

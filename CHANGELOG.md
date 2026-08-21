@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Workspace management** - the desktop app now asks which folder to open on first launch (native picker) instead of silently defaulting to Documents. The Settings panel shows the active workspace and lets you switch anytime via "Open Folder…" (desktop) or by typing an absolute path (works in browser/Docker too). Switching live-rebinds the file tools, git panel, skills, and language servers.
+- **Explorer file operations** - New File, New Folder, Rename, and Delete in the sidebar (click a folder to target it; right-click to select for rename/delete), with duplicate/traversal/root-delete guards. New files open immediately in the editor.
+- New server RPC: `fs.createFile`, `fs.createDir`, `fs.rename`, `fs.delete`, `workspace.get`, `workspace.set`.
+- Desktop preload bridge (`window.localai.pickWorkspace()` / `getWorkspace()`) for native folder picking.
+
 ## [0.1.3] - 2026-08-21
 
 ### Added
