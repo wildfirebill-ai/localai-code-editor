@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { EditorServer } from './server.js';
-import { loadConfig, configPath } from './config.js';
+import { applyProviderOverrides, loadConfig, configPath, loadProviderOverrides } from './config.js';
 
 const { values } = parseArgs({
   options: {
@@ -31,6 +31,8 @@ const config = loadConfig(values.config ?? configPath());
 if (values.workspace) config.workspace = values.workspace;
 if (values.port) config.port = Number(values.port);
 if (values.host) config.host = values.host;
+// Runtime provider edits (<workspace>/.localai/settings.json) win over file config.
+config.providers = applyProviderOverrides(config.providers, loadProviderOverrides(config.workspace));
 
 // Wrapped in main() so this file also bundles cleanly to CJS (esbuild build:bundle).
 async function main(): Promise<void> {

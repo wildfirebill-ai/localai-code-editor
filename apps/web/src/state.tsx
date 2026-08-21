@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { RpcClient } from './rpc';
-import type { AgentEvent, ChatEntry, ModelInfo, ProviderInfo, RepoStatus, McpServerStatus, McpTool, LspStatus } from './types';
+import type { AgentEvent, ChatEntry, ModelInfo, ProviderInfo, ProviderHealth, RepoStatus, McpServerStatus, McpTool, LspStatus } from './types';
 
 interface AppState {
   client: RpcClient;
   connected: boolean;
   providers: ProviderInfo[];
+  providerHealth: Record<string, ProviderHealth>;
   models: ModelInfo[];
   activeProvider: string;
   activeModel: string;
@@ -36,6 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [client] = useState(() => new RpcClient());
   const [connected, setConnected] = useState(false);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [providerHealth, setProviderHealth] = useState<Record<string, ProviderHealth>>({});
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [activeProvider, setActiveProvider] = useState('');
   const [activeModel, setActiveModel] = useState('');
@@ -66,9 +68,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const list = provs.providers ?? [];
       setProviders(list);
       if (list.length && !activeProvider) setActiveProvider(list[0].id);
-      const health = await client.request<Record<string, { ok: boolean }>>('providers.health');
+      const health = await client.request<Record<string, ProviderHealth>>('providers.health');
+      setProviderHealth(health);
       const healthy = list.find((p) => health[p.id]?.ok);
       if (healthy && !activeProvider) setActiveProvider(healthy.id);
+      // Active provider was removed elsewhere (Settings panel) — fall back.
+      if (activeProvider && !list.some((p) => p.id === activeProvider)) {
+        setActiveProvider(list[0]?.id ?? '');
+        setActiveModel('');
+        setModels([]);
+      }
       if (activeProvider) {
         const mods = await client.request<ModelInfo[]>('providers.listModels', { providerId: activeProvider });
         setModels(mods);
@@ -149,6 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     client,
     connected,
     providers,
+    providerHealth,
     models,
     activeProvider,
     activeModel,

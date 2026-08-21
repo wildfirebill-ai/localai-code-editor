@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PRESETS, type ProviderConfig } from '@localai/provider';
 import type { McpServerConfig } from '@localai/mcp';
@@ -56,4 +56,41 @@ export function loadConfig(path?: string): ServerConfig {
 
 export function configPath(): string {
   return resolve(process.cwd(), 'localai.config.json');
+}
+
+/**
+ * User-editable runtime settings, stored inside the workspace so they survive
+ * restarts in dev, desktop, and Docker alike: <workspace>/.localai/settings.json
+ */
+interface WorkspaceSettings {
+  providers?: ProviderConfig[];
+}
+
+function settingsPath(workspace: string): string {
+  return resolve(workspace, '.localai', 'settings.json');
+}
+
+export function loadProviderOverrides(workspace: string): ProviderConfig[] {
+  const file = settingsPath(workspace);
+  if (!existsSync(file)) return [];
+  try {
+    const raw = JSON.parse(readFileSync(file, 'utf-8')) as WorkspaceSettings;
+    return Array.isArray(raw.providers) ? raw.providers : [];
+  } catch (e) {
+    console.error(`Ignoring malformed ${file}:`, e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
+/** Merge overrides over the base list: same id replaces, new ids append. */
+export function applyProviderOverrides(base: ProviderConfig[], overrides: ProviderConfig[]): ProviderConfig[] {
+  const byId = new Map(base.map((p) => [p.id, p]));
+  for (const o of overrides) byId.set(o.id, o);
+  return [...byId.values()];
+}
+
+export function saveProviderOverrides(workspace: string, providers: ProviderConfig[]): void {
+  const file = settingsPath(workspace);
+  mkdirSync(resolve(file, '..'), { recursive: true });
+  writeFileSync(file, `${JSON.stringify({ providers }, null, 2)}\n`, 'utf-8');
 }

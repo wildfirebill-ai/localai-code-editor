@@ -73,6 +73,13 @@ export class ProviderRegistry {
     this.register(cfg);
   }
 
+  /** Remove a provider by id. Returns true when it existed. */
+  unregister(id: string): boolean {
+    const had = this.configs.delete(id);
+    this.instances.delete(id);
+    return had;
+  }
+
   get(id: string): LLMProvider | undefined {
     return this.instances.get(id);
   }

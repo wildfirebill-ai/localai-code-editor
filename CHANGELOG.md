@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **LLM provider connection settings in the UI** — the Settings panel now lists every provider with live health/latency, and lets you add, edit (label / base URL / API key), test, and remove providers at runtime. Presets for Ollama, LM Studio, llama.cpp, and vLLM; custom OpenAI-compatible endpoints supported. Settings persist to `<workspace>/.localai/settings.json` and survive restarts in dev, desktop, and Docker.
+- New server RPC: `providers.upsert`, `providers.remove`, `providers.test` (probe an endpoint without registering it).
+
 ## [0.1.2] - 2026-08-21
 
 ### Fixed

@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { WebSocketServer, WebSocket } from 'ws';
-import { ProviderRegistry, type ChatMessage } from '@localai/provider';
+import { OpenAICompatProvider, ProviderRegistry, type ChatMessage } from '@localai/provider';
 import { McpHost, type McpServerConfig } from '@localai/mcp';
 import { GitService } from '@localai/git';
 import { LanguageServerHost } from '@localai/lsp';
@@ -11,6 +11,7 @@ import { runAgent, builtinTools, defaultSystemPrompt, type Tool, type ToolFs } f
 import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
 import { resolveWebDist } from './webdist.js';
+import { saveProviderOverrides } from './config.js';
 import type { ServerConfig } from './config.js';
 
 type RpcParams = Record<string, unknown>;
@@ -210,6 +211,39 @@ export class EditorServer {
         const p = this.providerRegistry.get(String(params.providerId));
         if (!p) throw new Error(`Unknown provider: ${params.providerId}`);
         this.sendResult(ws, id, await p.listModels());
+        return;
+      }
+      case 'providers.upsert': {
+        const cfg = {
+          id: String(params.id ?? '').trim(),
+          label: String(params.label ?? '').trim() || String(params.id ?? '').trim(),
+          baseUrl: String(params.baseUrl ?? '').trim().replace(/\/+$/, ''),
+          apiKey: params.apiKey ? String(params.apiKey) : undefined,
+        };
+        if (!cfg.id) throw new Error('Provider id is required');
+        if (!/^https?:\/\//.test(cfg.baseUrl)) throw new Error('Base URL must start with http:// or https://');
+        this.providerRegistry.register(cfg);
+        saveProviderOverrides(this.config.workspace, this.providerRegistry.listConfigs());
+        this.sendResult(ws, id, { ok: true, providers: this.providerRegistry.listConfigs() });
+        return;
+      }
+      case 'providers.remove': {
+        const pid = String(params.id ?? '');
+        if (!this.providerRegistry.unregister(pid)) throw new Error(`Unknown provider: ${pid}`);
+        saveProviderOverrides(this.config.workspace, this.providerRegistry.listConfigs());
+        this.sendResult(ws, id, { ok: true, providers: this.providerRegistry.listConfigs() });
+        return;
+      }
+      case 'providers.test': {
+        // Probe an endpoint without registering it (used by the Save/Test buttons).
+        const probe = new OpenAICompatProvider({
+          id: 'probe',
+          label: 'probe',
+          baseUrl: String(params.baseUrl ?? '').trim().replace(/\/+$/, ''),
+          apiKey: params.apiKey ? String(params.apiKey) : undefined,
+        });
+        if (!/^https?:\/\//.test(probe.baseUrl)) throw new Error('Base URL must start with http:// or https://');
+        this.sendResult(ws, id, await probe.health());
         return;
       }
 
