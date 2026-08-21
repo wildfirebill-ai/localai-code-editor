@@ -102,7 +102,7 @@ export interface ChatEntry {
 export interface SkillSummary {
   name: string;
   description: string;
-  source: 'project' | 'user';
+  source: 'builtin' | 'project' | 'user';
   path: string;
   enabled: boolean;
   size: number;

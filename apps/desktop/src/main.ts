@@ -55,6 +55,11 @@ function startServer(workspace: string): ChildProcess {
       // Without this the child re-initializes full Electron and dies with
       // "AssignProcessToJobObject: The request is not supported."
       ELECTRON_RUN_AS_NODE: '1',
+      // Built-in skills shipped next to the app bundle.
+      LOCALAI_SKILLS_DIR:
+        process.resourcesPath && existsSync(join(process.resourcesPath, 'skills'))
+          ? join(process.resourcesPath, 'skills')
+          : undefined,
     },
   });
   // Stream-level errors (EPIPE when parent pipes die) must never become uncaught exceptions.

@@ -22,6 +22,8 @@ export async function* runAgent(opts: RunAgentOptions): AsyncGenerator<AgentEven
     systemPrompt,
     userPrompt,
     maxIterations = 25,
+    temperature,
+    maxTokens,
     signal,
     onEvent,
   } = opts;
@@ -39,6 +41,8 @@ export async function* runAgent(opts: RunAgentOptions): AsyncGenerator<AgentEven
       model,
       messages,
       tools: toolDefs,
+      temperature,
+      maxTokens,
       signal,
     };
 

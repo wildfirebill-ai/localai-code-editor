@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from './state';
+import { useApp, getRecentWorkspaces } from './state';
 import type { McpServerStatus, ProviderInfo } from './types';
 
 type McpForm = {
@@ -36,6 +36,7 @@ export function SettingsPanel() {
   const [err, setErr] = useState('');
   const [wsInput, setWsInput] = useState('');
   const [wsErr, setWsErr] = useState('');
+  const [recent] = useState(() => getRecentWorkspaces());
 
   const [provForm, setProvForm] = useState<ProvForm>(EMPTY_PROV);
   const [provEditing, setProvEditing] = useState<string | null>(null);
@@ -173,6 +174,25 @@ export function SettingsPanel() {
         <button className="btn tiny" onClick={setWsManually}>Set</button>
         {wsErr && <p className="error">{wsErr}</p>}
       </div>
+      {recent.length > 0 && (
+        <>
+          <div className="muted" style={{ padding: '0 10px 4px', fontSize: 11 }}>Recent workspaces</div>
+          <ul className="changes" style={{ marginBottom: 8 }}>
+            {recent.map((dir) => (
+              <li key={dir} className="change">
+                <span
+                  className="change-path"
+                  style={{ cursor: 'pointer', wordBreak: 'break-all' }}
+                  title={dir}
+                  onClick={() => void setWorkspace(dir).catch(() => {})}
+                >
+                  📁 {dir}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <div className="panel-title">LLM Providers</div>
       <div className="mcp-status">

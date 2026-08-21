@@ -1,6 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
-import { resolve, extname, join, isAbsolute } from 'node:path';
+import { stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { resolve, extname, join, isAbsolute, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { WebSocketServer, WebSocket } from 'ws';
 import { OpenAICompatProvider, ProviderRegistry, type ChatMessage } from '@localai/provider';
@@ -12,9 +14,32 @@ import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
 import { resolveWebDist } from './webdist.js';
 import { saveProviderOverrides } from './config.js';
+import { readFile } from 'node:fs/promises';
 import type { ServerConfig } from './config.js';
 
 type RpcParams = Record<string, unknown>;
+
+/**
+ * Directory of the current module in both ESM (tsc) and CJS (esbuild) output —
+ * same trick as webdist.ts.
+ */
+function moduleDir(): string | null {
+  if (typeof __dirname !== 'undefined' && __dirname) return __dirname;
+  try {
+    return dirname(fileURLToPath(import.meta.url));
+  } catch {
+    return null;
+  }
+}
+
+/** Built-in skills shipped with the editor (env override for packaged apps). */
+function builtinSkillsDir(): string | undefined {
+  if (process.env.LOCALAI_SKILLS_DIR) return process.env.LOCALAI_SKILLS_DIR;
+  const dir = moduleDir();
+  if (!dir) return undefined;
+  const candidate = join(dir, '..', '..', 'skills', 'builtin');
+  return existsSync(candidate) ? candidate : undefined;
+}
 
 export class EditorServer {
   readonly providerRegistry: ProviderRegistry;
@@ -38,6 +63,7 @@ export class EditorServer {
     void this.skills.load({
       projectDir: config.workspace,
       userDir: defaultUserSkillsDir(homedir()),
+      builtinDir: builtinSkillsDir(),
     });
 
     this.http = createServer((req, res) => this.handleHttp(req, res));
@@ -256,6 +282,12 @@ export class EditorServer {
         const provider = this.providerRegistry.get(String(params.providerId));
         if (!provider) throw new Error(`Unknown provider: ${params.providerId}`);
         const baseSystem = String(params.systemPrompt ?? defaultSystemPrompt(this.config.workspace));
+        const system = await this.withWorkspacePrompt(this.buildSystemPrompt(baseSystem));
+        const temperature = params.temperature != null ? Number(params.temperature) : undefined;
+        const maxTokens = params.maxTokens != null ? Number(params.maxTokens) : undefined;
+        if (temperature != null && (Number.isNaN(temperature) || temperature < 0 || temperature > 2)) {
+          throw new Error('temperature must be between 0 and 2');
+        }
         const controller = new AbortController();
         this.runControllers.set(ws, controller);
         const gen = runAgent({
@@ -271,8 +303,10 @@ export class EditorServer {
           },
           provider,
           model: String(params.model),
-          systemPrompt: this.buildSystemPrompt(baseSystem),
+          systemPrompt: system,
           userPrompt: String(params.prompt),
+          temperature,
+          maxTokens,
           signal: controller.signal,
           onEvent: (ev) => {
             ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'event', params: ev }));
@@ -382,6 +416,8 @@ export class EditorServer {
       case 'fs.createDir': { await this.fs.createDir(String(params.path)); return this.sendResult(ws, id, { ok: true }); }
       case 'fs.rename': { await this.fs.renamePath(String(params.path), String(params.newName)); return this.sendResult(ws, id, { ok: true }); }
       case 'fs.delete': { await this.fs.deletePath(String(params.path)); return this.sendResult(ws, id, { ok: true }); }
+      case 'fs.allFiles': return this.sendResult(ws, id, await this.fs.allFiles());
+      case 'fs.search': return this.sendResult(ws, id, await this.fs.searchText(String(params.query ?? '')));
       case 'fs.stat': {
         try {
           const info = await stat(resolve(this.config.workspace, String(params.path)));
@@ -412,6 +448,18 @@ export class EditorServer {
     ws.send(JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } }));
   }
 
+  /** Append <workspace>/.localai/system.md (if present) to the agent's system prompt. */
+  private async withWorkspacePrompt(prompt: string): Promise<string> {
+    try {
+      const extra = await readFile(resolve(this.config.workspace, '.localai', 'system.md'), 'utf-8');
+      const trimmed = extra.trim();
+      if (!trimmed) return prompt;
+      return `${prompt}\n\n# Workspace instructions\n\n${trimmed}`;
+    } catch {
+      return prompt;
+    }
+  }
+
   /** Switch the workspace at runtime: rebinds fs, git, skills, and LSP hosts. */
   private async setWorkspace(dir: string): Promise<{ ok: true; workspace: string }> {
     const target = resolve(dir.trim());
@@ -427,6 +475,7 @@ export class EditorServer {
     void this.skills.load({
       projectDir: target,
       userDir: defaultUserSkillsDir(homedir()),
+      builtinDir: builtinSkillsDir(),
     });
     this.lsp = new LanguageServerHost(target, this.config.languageServers);
     console.log(`Workspace switched to ${target}`);

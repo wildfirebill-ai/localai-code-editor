@@ -26,6 +26,7 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Approve-before-apply mode** | Agent proposes edits as reviewable diffs; you accept/reject each one before it touches disk. Guardrail mode for untrusted repos and high-stakes work. | High | 📋 Planned |
 | **Agent Skills Marketplace** | Built-in browser to discover, install, and share skills from a community registry | High | 📋 Planned |
 | **Docker-in-Docker Sandbox** | Safe, isolated environment for agent to run/test code without host access | High | 📋 Planned |
 | **Agent System Prompt Tuning UI** | Visual editor to customize the agent's system prompt, tool descriptions, and behavior | Medium | 📋 Planned |

@@ -1,5 +1,5 @@
 /** Where a skill was loaded from. */
-export type SkillSource = 'project' | 'user';
+export type SkillSource = 'builtin' | 'user' | 'project';
 
 /** Metadata parsed from a SKILL.md YAML frontmatter. */
 export interface SkillFrontmatter {

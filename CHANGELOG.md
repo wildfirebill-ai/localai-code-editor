@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Quick Open (Ctrl+P)** - fuzzy file finder across the whole workspace.
+- **Search panel** - case-insensitive text search across all files, grouped by file, click to open.
+- **`@file` mentions in prompts** - type `@` for a file autocomplete; mentioned files are attached as context for the agent.
+- **Built-in global skills** - 11 real skills ship with the editor and work in every workspace: commit, test-and-fix, typecheck-fix, lint-clean, debug-failure, refactor-safe, docker-build-run, dependency-update, git-release, write-docs, security-check. Project/user skills still override same-named builtins.
+- **Sampling controls** - temperature / max-tokens per request (gear icon in the Agent panel), persisted.
+- **Markdown preview** - toggle Edit/Preview for `.md` files.
+- **Recent workspaces** - last 8 workspaces listed in Settings > Workspace.
+- **Run-completed notification** - system notification + title flash when an agent run finishes in an unfocused window.
+- **Explorer auto-expand** - the tree expands to the file open in the editor.
+- New server RPC: `fs.allFiles`, `fs.search`. Agent loop now supports `temperature`/`maxTokens`; per-workspace `.localai/system.md` is appended to the agent's system prompt.
+
 ## [0.1.4] - 2026-08-21
 
 ### Added

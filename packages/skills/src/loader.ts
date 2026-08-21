@@ -87,14 +87,17 @@ export interface LoadSkillsOptions {
   projectDir: string;
   /** User skills dir. Defaults to `<homedir>/.localai/skills`. */
   userDir?: string;
+  /** Skills shipped with the app. Lowest precedence; available in every workspace. */
+  builtinDir?: string;
   /** If true, a project skill overrides a same-named user skill. Default true. */
   projectPrecedence?: boolean;
 }
 
 /**
- * Loads all skills: project skills (workspace `.localai/skills`) plus
- * user/global skills (`~/.localai/skills`). Project skills take precedence
- * over same-named user skills.
+ * Loads all skills, in precedence order project > user > builtin:
+ *  - project: `<workspace>/.localai/skills`
+ *  - user:    `~/.localai/skills`
+ *  - builtin: shipped with the editor, available everywhere
  */
 export class SkillStore {
   private skills = new Map<string, Skill>();
@@ -102,16 +105,20 @@ export class SkillStore {
   async load(opts: LoadSkillsOptions): Promise<Skill[]> {
     const projectPrecedence = opts.projectPrecedence ?? true;
     const projectRoot = resolve(opts.projectDir);
-    const projectSkills = await loadSkillsFromDir(join(projectRoot, '.localai', 'skills'), 'project', projectRoot);
+    const builtinSkills = opts.builtinDir
+      ? await loadSkillsFromDir(resolve(opts.builtinDir), 'builtin', projectRoot)
+      : [];
     const userSkills = opts.userDir ? await loadSkillsFromDir(resolve(opts.userDir), 'user', projectRoot) : [];
+    const projectSkills = await loadSkillsFromDir(join(projectRoot, '.localai', 'skills'), 'project', projectRoot);
 
     const merged = new Map<string, Skill>();
+    for (const s of builtinSkills) merged.set(s.name, s);
+    for (const s of userSkills) merged.set(s.name, s);
     if (projectPrecedence) {
-      for (const s of userSkills) merged.set(s.name, s);
       for (const s of projectSkills) merged.set(s.name, s); // project wins
     } else {
-      for (const s of projectSkills) merged.set(s.name, s);
-      for (const s of userSkills) merged.set(s.name, s); // user wins
+      for (const s of userSkills) merged.set(s.name, s); // user wins over project
+      for (const s of projectSkills) if (!merged.has(s.name)) merged.set(s.name, s);
     }
 
     this.skills = merged;

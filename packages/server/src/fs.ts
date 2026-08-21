@@ -1,6 +1,27 @@
-import { mkdir, readFile, readdir, rename, rm, writeFile, stat } from 'node:fs/promises';
-import { resolve, isAbsolute, relative, dirname, sep, join } from 'node:path';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { resolve, isAbsolute, relative, dirname, sep, join, extname } from 'node:path';
 import type { ToolFs } from '@localai/agent';
+
+/** Directories never walked when indexing/searching the workspace. */
+const SKIP_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'dist-server', 'build', 'out', '.next',
+  'coverage', '.pnpm-store', '__pycache__', '.venv', 'venv', '.idea', '.vscode',
+  'release', 'target', '.cache', '.localai',
+]);
+
+/** Extensions treated as binary (never searched / never opened as text). */
+const BINARY_EXTS = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.bmp', '.pdf', '.zip',
+  '.gz', '.tar', '.7z', '.rar', '.exe', '.dll', '.so', '.dylib', '.bin',
+  '.woff', '.woff2', '.ttf', '.otf', '.eot', '.mp3', '.mp4', '.webm', '.wav',
+  '.wasm', '.class', '.jar', '.pyc', '.o', '.a', '.lib', '.sqlite', '.db',
+]);
+
+export interface SearchHit {
+  path: string;
+  line: number;
+  text: string;
+}
 
 /**
  * Filesystem adapter for the agent's file tools, sandboxed to a workspace
@@ -87,5 +108,67 @@ export class WorkspaceFs implements ToolFs {
     const rel = relative(this.root, target);
     if (!rel || rel.startsWith('..')) throw new Error('Refusing to delete the workspace root');
     await rm(target, { recursive: true, force: false });
+  }
+
+  /** Every text file in the workspace (for Quick Open), as forward-slash paths. */
+  async allFiles(): Promise<string[]> {
+    const out: string[] = [];
+    const walk = async (dir: string): Promise<void> => {
+      if (out.length >= 5000) return;
+      let entries;
+      try {
+        entries = await readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        if (out.length >= 5000) return;
+        const full = join(dir, e.name);
+        if (e.isDirectory()) {
+          if (!SKIP_DIRS.has(e.name) && !e.name.startsWith('.')) await walk(full);
+          continue;
+        }
+        if (e.name.startsWith('.') || BINARY_EXTS.has(extname(e.name).toLowerCase())) continue;
+        out.push(relative(this.root, full).split(sep).join('/'));
+      }
+    };
+    await walk(this.root);
+    return out.sort();
+  }
+
+  /** Case-insensitive substring search across all text files. */
+  async searchText(query: string, opts?: { maxTotal?: number; maxPerFile?: number }): Promise<SearchHit[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const maxTotal = opts?.maxTotal ?? 200;
+    const maxPerFile = opts?.maxPerFile ?? 20;
+    const files = await this.allFiles();
+    const hits: SearchHit[] = [];
+
+    for (const rel of files) {
+      if (hits.length >= maxTotal) break;
+      let raw: string;
+      try {
+        const info = await stat(resolve(this.root, rel));
+        if (info.size > 512 * 1024) continue;
+        raw = await readFile(resolve(this.root, rel), 'utf-8');
+      } catch {
+        continue;
+      }
+      if (raw.includes('\u0000')) continue; // binary
+      const lines = raw.split('\n');
+      let inFile = 0;
+      for (let i = 0; i < lines.length && inFile < maxPerFile && hits.length < maxTotal; i++) {
+        const idx = lines[i].toLowerCase().indexOf(q);
+        if (idx === -1) continue;
+        inFile++;
+        hits.push({
+          path: rel,
+          line: i + 1,
+          text: lines[i].trim().slice(0, 240),
+        });
+      }
+    }
+    return hits;
   }
 }

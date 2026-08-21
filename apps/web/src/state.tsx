@@ -23,13 +23,59 @@ interface AppState {
   setActiveModel: (id: string) => void;
   setWorkspace: (path: string) => Promise<void>;
   refresh: () => Promise<void>;
-  sendPrompt: (prompt: string) => Promise<void>;
+  sendPrompt: (prompt: string, params?: { temperature?: number; maxTokens?: number }) => Promise<void>;
   stop: () => void;
   appendChat: (entry: ChatEntry) => void;
   clearChat: () => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
+
+/** Remember the last 8 workspaces (most recent first). */
+function pushRecentWorkspace(dir: string): void {
+  if (!dir) return;
+  try {
+    const list: string[] = JSON.parse(localStorage.getItem('localai.recentWorkspaces') ?? '[]');
+    const next = [dir, ...list.filter((d) => d !== dir)].slice(0, 8);
+    localStorage.setItem('localai.recentWorkspaces', JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getRecentWorkspaces(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem('localai.recentWorkspaces') ?? '[]');
+  } catch {
+    return [];
+  }
+}
+
+/** Nudge the user when a long agent run finishes in an unfocused window. */
+function notifyRunDone(): void {
+  if (!document.hidden) return;
+  try {
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification('LocalAI Code Editor', { body: 'Agent run finished.' });
+      } else if (Notification.permission === 'default') {
+        void Notification.requestPermission().catch(() => {});
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  // Title flash as a fallback.
+  const orig = document.title;
+  let n = 0;
+  const iv = setInterval(() => {
+    document.title = document.title.startsWith('✅') ? orig : `✅ ${orig}`;
+    if (++n >= 6) {
+      clearInterval(iv);
+      document.title = orig;
+    }
+  }, 700);
+}
 
 export function useApp(): AppState {
   const ctx = useContext(Ctx);
@@ -81,6 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const ws = await client.request<{ workspace: string }>('workspace.get');
       setWorkspacePath(ws.workspace);
+      pushRecentWorkspace(ws.workspace);
       const provs = await client.request<{ providers: ProviderInfo[] }>('providers.list');
       const list = provs.providers ?? [];
       setProviders(list);
@@ -130,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void loadModels(id);
   };
 
-  const sendPrompt = async (prompt: string) => {
+  const sendPrompt = async (prompt: string, params?: { temperature?: number; maxTokens?: number }) => {
     if (!activeProvider || !activeModel) {
       appendChat({ role: 'assistant', content: 'Select a provider and model first.' });
       return;
@@ -155,6 +202,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         providerId: activeProvider,
         model: activeModel,
         prompt,
+        temperature: params?.temperature,
+        maxTokens: params?.maxTokens,
       });
       if (reply.length) appendChat({ role: 'assistant', content: reply.join('') });
       if (sawTools) refresh();
@@ -163,6 +212,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       off();
       setRunning(false);
+      notifyRunDone();
       // The agent may have edited the open file — let the editor pick it up.
       setEditorReloadKey((k) => k + 1);
     }
@@ -177,6 +227,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await client.request('workspace.set', { path });
     setActiveModel('');
     setModels([]);
+    pushRecentWorkspace(path);
     await refresh();
   };
 

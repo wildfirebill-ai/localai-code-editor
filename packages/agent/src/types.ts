@@ -57,6 +57,10 @@ export interface RunAgentOptions {
   userPrompt: string;
   /** Max tool-call rounds before giving up. Defaults to 25. */
   maxIterations?: number;
+  /** LLM sampling temperature. Omitted = provider default. */
+  temperature?: number;
+  /** Max tokens per completion. Omitted = provider default. */
+  maxTokens?: number;
   signal?: AbortSignal;
   onEvent?: (event: AgentEvent) => void;
 }

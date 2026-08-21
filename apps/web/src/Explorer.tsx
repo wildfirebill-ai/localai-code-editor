@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from './state';
+import { invalidateFileCache } from './files';
 
 interface Node {
   name: string;
@@ -53,10 +54,26 @@ export function Explorer({ onOpen, openPath }: { onOpen: (path: string) => void;
     }
   }, [pending]);
 
+  // Keep the tree expanded to the file open in the editor.
+  useEffect(() => {
+    if (!openPath) return;
+    const parts = openPath.split('/');
+    setExpanded((e) => {
+      const next = { ...e };
+      let acc = '';
+      for (let i = 0; i < parts.length - 1; i++) {
+        acc = acc ? `${acc}/${parts[i]}` : parts[i];
+        next[acc] = true;
+      }
+      return next;
+    });
+  }, [openPath]);
+
   const run = async (fn: () => Promise<unknown>) => {
     setErr('');
     try {
       await fn();
+      invalidateFileCache();
       await refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));

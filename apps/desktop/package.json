@@ -43,6 +43,11 @@
         "from": "../../apps/web/dist",
         "to": "web",
         "filter": ["**/*"]
+      },
+      {
+        "from": "../../packages/skills/builtin",
+        "to": "skills",
+        "filter": ["**/*"]
       }
     ],
     "win": { "target": ["nsis", "zip"] },
