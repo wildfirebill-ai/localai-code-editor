@@ -150,7 +150,7 @@ jobs:
   # ---- Publish results into VULNERABILITIES.md ----
   publish-report:
     needs: [repo-scan, image-scan]
-    if: always() && !cancelled()
+    if: needs.repo-scan.result == 'success' && needs.image-scan.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
