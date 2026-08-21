@@ -193,9 +193,11 @@ function main() {
   const refLabel =
     EVENT === 'release'
       ? `release \`${RELEASE_TAG}\``
-      : EVENT === 'schedule'
-        ? 'scheduled weekly scan (main @ HEAD)'
-        : `manual dispatch (${EVENT})`;
+      : EVENT === 'push'
+        ? 'tag push (main release pipeline)'
+        : EVENT === 'schedule'
+          ? 'scheduled weekly scan (main @ HEAD)'
+          : `manual dispatch (${EVENT})`;
 
   const section = [
     START,
