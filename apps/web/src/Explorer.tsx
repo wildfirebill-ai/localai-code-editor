@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from './state';
 
 interface Node {
@@ -22,6 +22,10 @@ async function loadTree(client: { request: <T>(m: string, p?: Record<string, unk
   );
 }
 
+type Pending =
+  | { mode: 'file' | 'folder'; parent: string }
+  | { mode: 'rename'; path: string; initial: string };
+
 export function Explorer({ onOpen, openPath }: { onOpen: (path: string) => void; openPath: string }) {
   const { client, workspace } = useApp();
   const [tree, setTree] = useState<Node[]>([]);
@@ -30,12 +34,24 @@ export function Explorer({ onOpen, openPath }: { onOpen: (path: string) => void;
   const [selectedDir, setSelectedDir] = useState('');
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [err, setErr] = useState('');
+  /** Inline create/rename input (window.prompt is unsupported in Electron). */
+  const [pending, setPending] = useState<Pending | null>(null);
+  const [pendingName, setPendingName] = useState('');
+  const pendingRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => loadTree(client, '').then(setTree).catch((e) => setErr(String(e)));
   useEffect(() => {
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, workspace]);
+
+  useEffect(() => {
+    if (pending) {
+      setPendingName(pending.mode === 'rename' ? pending.initial : '');
+      // Focus after the input mounts.
+      requestAnimationFrame(() => pendingRef.current?.focus());
+    }
+  }, [pending]);
 
   const run = async (fn: () => Promise<unknown>) => {
     setErr('');
@@ -59,31 +75,42 @@ export function Explorer({ onOpen, openPath }: { onOpen: (path: string) => void;
     setSelectedDir(node.isDir ? node.path : parentOf(node.path));
   };
 
-  const newFile = () =>
-    void run(async () => {
-      const name = prompt(`New file in ${selectedDir || 'workspace root'}:`);
-      if (!name) return;
-      const path = selectedDir ? `${selectedDir}/${name}` : name;
-      await client.request('fs.createFile', { path });
-      onOpen(path);
-    });
+  const startCreate = (mode: 'file' | 'folder') => {
+    setSelectedDir(selectedNode ? (selectedNode.isDir ? selectedNode.path : parentOf(selectedNode.path)) : selectedDir);
+    setPending({ mode, parent: selectedDir });
+  };
 
-  const newFolder = () =>
-    void run(async () => {
-      const name = prompt(`New folder in ${selectedDir || 'workspace root'}:`);
-      if (!name) return;
-      await client.request('fs.createDir', { path: selectedDir ? `${selectedDir}/${name}` : name });
-    });
+  const startRename = () => {
+    if (!selectedNode) return;
+    setPending({ mode: 'rename', path: selectedNode.path, initial: selectedNode.name });
+  };
 
-  const renameSel = () => {
-    const n = selectedNode;
-    if (!n) return;
-    void run(async () => {
-      const name = prompt(`Rename "${n.name}" to:`, n.name);
-      if (!name || name === n.name) return;
-      await client.request('fs.rename', { path: n.path, newName: name });
-      if (openPath === n.path) onOpen(parentOf(n.path) ? `${parentOf(n.path)}/${name}` : name);
-    });
+  const commitPending = () => {
+    const p = pending;
+    const name = pendingName.trim();
+    if (!p || !name) return setPending(null);
+    setPending(null);
+    if (p.mode === 'rename') {
+      if (name === p.initial) return;
+      void run(async () => {
+        await client.request('fs.rename', { path: p.path, newName: name });
+        const parent = parentOf(p.path);
+        if (openPath === p.path || openPath.startsWith(`${p.path}/`)) {
+          onOpen(parent ? `${parent}/${name}` : name);
+        }
+      });
+    } else {
+      const path = p.parent ? `${p.parent}/${name}` : name;
+      void run(async () => {
+        if (p.mode === 'file') {
+          await client.request('fs.createFile', { path });
+          onOpen(path);
+        } else {
+          await client.request('fs.createDir', { path });
+          if (p.parent) setExpanded((e) => ({ ...e, [p.parent]: true }));
+        }
+      });
+    }
   };
 
   const deleteSel = () => {
@@ -137,6 +164,13 @@ export function Explorer({ onOpen, openPath }: { onOpen: (path: string) => void;
     );
   };
 
+  const pendingLabel =
+    pending?.mode === 'file'
+      ? `New file in ${pending.parent || 'workspace root'}`
+      : pending?.mode === 'folder'
+        ? `New folder in ${pending.parent || 'workspace root'}`
+        : 'Rename';
+
   return (
     <div className="explorer">
       <div className="panel-title">Explorer</div>
@@ -144,14 +178,31 @@ export function Explorer({ onOpen, openPath }: { onOpen: (path: string) => void;
         {workspace || '…'}
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '0 8px 8px' }}>
-        <button className="btn tiny" title="New file in the selected folder" onClick={newFile}>+ File</button>
-        <button className="btn tiny" title="New folder in the selected folder" onClick={newFolder}>+ Folder</button>
-        <button className="btn tiny" disabled={!selectedNode} title="Rename selection" onClick={renameSel}>Rename</button>
+        <button className="btn tiny" title="New file in the selected folder" onClick={() => startCreate('file')}>+ File</button>
+        <button className="btn tiny" title="New folder in the selected folder" onClick={() => startCreate('folder')}>+ Folder</button>
+        <button className="btn tiny" disabled={!selectedNode} title="Rename selection" onClick={startRename}>Rename</button>
         <button className="btn tiny" disabled={!selectedNode} title="Delete selection" onClick={deleteSel}>Delete</button>
         <button className="btn tiny" title="Reload tree" onClick={() => void refresh()}>↻</button>
       </div>
+      {pending && (
+        <div style={{ padding: '0 8px 8px' }}>
+          <div className="muted" style={{ fontSize: 11, marginBottom: 2 }}>{pendingLabel}</div>
+          <input
+            ref={pendingRef}
+            value={pendingName}
+            placeholder="name"
+            onChange={(e) => setPendingName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitPending();
+              if (e.key === 'Escape') setPending(null);
+            }}
+            onBlur={() => setPending(null)}
+            style={{ width: '100%' }}
+          />
+        </div>
+      )}
       {err && <p className="error" style={{ padding: '0 10px' }}>{err}</p>}
-      {!tree.length && <p className="muted" style={{ padding: '0 10px' }}>Empty workspace.</p>}
+      {!tree.length && !pending && <p className="muted" style={{ padding: '0 10px' }}>Empty workspace.</p>}
       {tree.map((n) => renderNode(n, 0))}
       <p className="muted" style={{ padding: '6px 10px', fontSize: 11 }}>
         Click a folder to target it for new files. Right-click to select for rename/delete.
