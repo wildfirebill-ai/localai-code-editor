@@ -32,12 +32,20 @@ if (values.workspace) config.workspace = values.workspace;
 if (values.port) config.port = Number(values.port);
 if (values.host) config.host = values.host;
 
-const server = new EditorServer(config);
-await server.start();
+// Wrapped in main() so this file also bundles cleanly to CJS (esbuild build:bundle).
+async function main(): Promise<void> {
+  const server = new EditorServer(config);
+  await server.start();
 
-for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.on(signal, async () => {
-    await server.stop();
-    process.exit(0);
-  });
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.on(signal, async () => {
+      await server.stop();
+      process.exit(0);
+    });
+  }
 }
+
+main().catch((err) => {
+  console.error('Fatal:', err);
+  process.exit(1);
+});

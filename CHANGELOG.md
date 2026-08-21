@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Desktop installers now launch correctly on Windows/macOS/Linux.** The packaged app previously exited silently after ~15s because:
+  - The bundled server had no `node_modules` next to it (`ws`, `simple-git`, workspace packages missing) — the server is now bundled into a single dependency-free `index.cjs` with esbuild
+  - The server looked for the web UI at a source-tree-relative path that does not exist in packaged apps — the UI is now shipped as an extraResource and located via `LOCALAI_WEB_DIST` (with packaged/dev fallbacks)
+  - Startup failures were only logged to an invisible console — errors now surface in a native error dialog with server output tail
+
 ### Added
 - SEO-optimized README with comprehensive documentation
 - Topics/keywords for discoverability
@@ -20,12 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CI/CD workflows now only trigger on version tags (`v*`) and manual dispatch
+- Desktop `dist*` scripts are self-contained: they build all packages + the server bundle before electron-builder runs
 - Desktop artifact globs fixed to exclude unpacked files (win-unpacked, etc.)
 - Linux artifact globs now include deb/tar.gz from `@localai/` subdirectory
 - Updated all GitHub Actions to latest major versions (Node 24 runtimes)
 - Softprops/action-gh-release updated to v3 for Node 24 compatibility
 
-### Fixed
+### Fixed (CI)
 - Docker build: `pnpm-lock.yaml` now copied for `pnpm install --frozen-lockfile`
 - Linux deb/tar.gz artifacts now included in releases
 - Windows spurious artifacts (elevate.exe, LocalAI.Code.Editor.exe) excluded

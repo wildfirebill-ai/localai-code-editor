@@ -14,10 +14,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsc -p tsconfig.json && electron .",
     "start": "electron .",
-    "dist": "pnpm build && electron-builder",
-    "dist:win": "pnpm build && electron-builder --win",
-    "dist:mac": "pnpm build && electron-builder --mac",
-    "dist:linux": "pnpm build && electron-builder --linux",
+    "predist": "pnpm -r build && pnpm --filter @localai/server build:bundle",
+    "dist": "electron-builder",
+    "dist:win": "pnpm run predist && electron-builder --win",
+    "dist:mac": "pnpm run predist && electron-builder --mac",
+    "dist:linux": "pnpm run predist && electron-builder --linux",
     "lint": "echo 'no linter configured yet'",
     "test": "echo 'no tests yet'"
   },
@@ -25,16 +26,18 @@
     "appId": "com.localai.codeeditor",
     "productName": "LocalAI Code Editor",
     "files": [
-      "dist/**/*",
-      "node_modules/@localai/**/*",
-      "node_modules/simple-git/**/*",
-      "node_modules/ws/**/*"
+      "dist/**/*"
     ],
     "extraResources": [
       {
-        "from": "../../packages/server",
+        "from": "../../packages/server/dist-server",
         "to": "server",
-        "filter": ["dist/**/*", "package.json"]
+        "filter": ["index.cjs"]
+      },
+      {
+        "from": "../../apps/web/dist",
+        "to": "web",
+        "filter": ["**/*"]
       }
     ],
     "win": { "target": ["nsis", "zip"] },

@@ -10,6 +10,7 @@ import { LanguageServerHost } from '@localai/lsp';
 import { runAgent, builtinTools, defaultSystemPrompt, type Tool, type ToolFs } from '@localai/agent';
 import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
+import { resolveWebDist } from './webdist.js';
 import type { ServerConfig } from './config.js';
 
 type RpcParams = Record<string, unknown>;
@@ -150,7 +151,11 @@ export class EditorServer {
 
   /** Serve the built web UI (and Monaco assets) when available. */
   private async serveStatic(url: string, res: ServerResponse): Promise<void> {
-    const webDist = resolve(import.meta.dirname, '../../../apps/web/dist');
+    const webDist = resolveWebDist();
+    if (!webDist) {
+      res.writeHead(404).end('Web UI not found. Set LOCALAI_WEB_DIST or run `pnpm --filter @localai/web build` first.');
+      return;
+    }
     let path = url === '/' ? '/index.html' : url;
     if (path.includes('..')) {
       res.writeHead(403).end('Forbidden');
