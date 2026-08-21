@@ -19,16 +19,17 @@
     "dev": "tsc -p tsconfig.json && electron .",
     "start": "electron .",
     "predist": "pnpm -r build && pnpm --filter @localai/server build:bundle",
-    "dist": "electron-builder",
-    "dist:win": "pnpm run predist && electron-builder --win",
-    "dist:mac": "pnpm run predist && electron-builder --mac",
-    "dist:linux": "pnpm run predist && electron-builder --linux",
+    "dist": "electron-builder -p never",
+    "dist:win": "pnpm run predist && electron-builder --win -p never",
+    "dist:mac": "pnpm run predist && electron-builder --mac -p never",
+    "dist:linux": "pnpm run predist && electron-builder --linux -p never",
     "lint": "echo 'no linter configured yet'",
     "test": "echo 'no tests yet'"
   },
   "build": {
     "appId": "com.localai.codeeditor",
     "productName": "LocalAI Code Editor",
+    "publish": null,
     "files": [
       "dist/**/*"
     ],
