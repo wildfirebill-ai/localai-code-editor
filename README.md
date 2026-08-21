@@ -57,11 +57,13 @@ LocalAI Code Editor is a multi-platform code editor with a built-in **agentic AI
 |----------|--------------|
 | **AI Agent** | Streamed chat that reads/writes files, runs commands, calls MCP tools, and iterates to completion |
 | **Local LLM Support** | Auto-detect Ollama, LM Studio, llama.cpp, and any OpenAI-compatible endpoint |
+| **Provider Setup UI** | Add, edit, test, and remove providers at runtime (Settings panel) — persisted per workspace |
+| **Workspace Management** | Native folder picker on launch; switch projects anytime; live-rebinds git/skills/LSP |
 | **MCP Client** | Connect local (stdio) and remote (HTTP/SSE) MCP servers; expose their tools to the agent |
 | **Agent Skills** | Project + user `SKILL.md` files with frontmatter; loaded into the agent on demand |
 | **Language Servers** | LSP-based completion, hover, diagnostics, definition, references, rename |
 | **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log |
-| **File Explorer** | Browse, open, edit, and save any file in the workspace |
+| **File Explorer** | Browse, open, edit, save — plus New File/Folder, Rename, and Delete from the sidebar |
 | **Monaco Editor** | The industry-standard editor used by VS Code, running locally |
 | **Multi-Platform** | Windows, macOS, Linux (Electron), and any web-capable device (Docker) |
 
@@ -80,6 +82,15 @@ LocalAI Code Editor connects to **every** major local inference server through t
 - **Any OpenAI-compatible endpoint** — Custom servers, enterprise proxies, and more
 
 The editor health-checks each endpoint and lets you pick the running provider and model from the **Agent** panel.
+
+### Configuring providers from the UI
+
+No config file needed — open the **Settings** panel (⚡ icon) → **LLM Providers**:
+
+- See every provider with live health/latency
+- **Add** a provider from a preset (Ollama, LM Studio, llama.cpp, vLLM) or any custom OpenAI-compatible URL
+- **Edit** label / base URL / API key, **Test** the connection before saving, or **Remove**
+- Settings persist to `<workspace>/.localai/settings.json` and survive restarts (dev, desktop, and Docker)
 
 ---
 
@@ -112,6 +123,10 @@ Open **http://127.0.0.1:4801** in your browser, pick your provider and model in 
 pnpm --filter @localai/desktop dev        # run with hot reload
 pnpm --filter @localai/desktop dist       # package installers for your OS
 ```
+
+On first launch the desktop app asks you to **pick a project folder** (native dialog). You can switch projects anytime from **Settings → Workspace → Open Folder…**, or by typing an absolute path (also works in browser/Docker mode).
+
+> Or skip the build entirely — grab a ready-made installer from the [latest release](https://github.com/wildfirebill-ai/localai-code-editor/releases/latest).
 
 ### Docker (Production / Unraid)
 
@@ -347,6 +362,24 @@ See [ROADMAP.md](ROADMAP.md) for the detailed roadmap.
 
 ---
 
+## 🏷️ CI & Releases
+
+Both workflows (`ci.yml`, `docker.yml`) run **only** when:
+
+1. A version tag is pushed — `git tag v0.1.4 && git push --tags` — or
+2. Manually triggered from the **Actions** tab (`workflow_dispatch`)
+
+Everyday pushes to `main` and pull requests do **not** run CI. Pushing a `v*` tag triggers the full pipeline:
+
+| Job | What it does |
+| --- | --- |
+| `test` | Builds + typechecks + lints + tests on Windows, macOS, and Linux |
+| `desktop` | Packages installers per OS (NSIS/zip, DMG/zip, AppImage/deb/tar.gz) |
+| `release` | Publishes all desktop artifacts to a GitHub Release with generated notes |
+| `docker` | Builds and pushes the multi-arch image to `ghcr.io` with semver tags |
+
+---
+
 ## 📜 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
@@ -355,6 +388,10 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.1.4](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.4) | 2026-08-21 | Workspace picker + runtime switching, Explorer file ops (new/rename/delete) |
+| [v0.1.3](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.3) | 2026-08-21 | Provider connection settings UI — add/edit/test/remove at runtime |
+| [v0.1.2](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.2) | 2026-08-21 | Fix Windows launch crash (ELECTRON_RUN_AS_NODE), EPIPE guard |
+| [v0.1.1](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.1) | 2026-08-20 | Fix packaged app: bundled server, shipped web UI, visible errors |
 | [v0.1.0](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.0) | 2026-08-20 | Initial release: Core editor, agent loop, MCP, Skills, LSP, Git panel, Win/Mac/Linux/Docker |
 
 ---
