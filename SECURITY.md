@@ -35,6 +35,8 @@ We aim to:
 
 ## 🔐 Security Principles
 
+> **Transparency first:** known weaknesses and accepted risks are documented publicly in [VULNERABILITIES.md](VULNERABILITIES.md) — including prompt-injection exposure, the unauthenticated server, and Docker socket implications. Read it before deploying beyond localhost.
+
 ### Local-First by Design
 
 LocalAI Code Editor is built on a **local-first architecture**:

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **VULNERABILITIES.md** - public transparency document listing every known weakness, attack surface, and accepted design tradeoff (prompt injection via agent, unauthenticated server/WS, Docker socket, plaintext keys, shell-bypasses-protectedPaths, and more) with scenarios, mitigations, and a user hardening checklist.
+
+### Added
 - **Quick Open (Ctrl+P)** - fuzzy file finder across the whole workspace.
 - **Search panel** - case-insensitive text search across all files, grouped by file, click to open.
 - **`@file` mentions in prompts** - type `@` for a file autocomplete; mentioned files are attached as context for the agent.

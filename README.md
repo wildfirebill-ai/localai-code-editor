@@ -412,7 +412,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 🔒 Security
 
-See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities.
+See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities. For full transparency, [VULNERABILITIES.md](VULNERABILITIES.md) documents every known weakness, attack surface, and accepted design tradeoff — including prompt-injection risk and the unauthenticated server — before you discover them the hard way.
 
 ### Key Security Principles
 
