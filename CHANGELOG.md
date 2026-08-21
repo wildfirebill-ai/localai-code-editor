@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-08-21
+
+### Fixed
+- **Windows install: "AssignProcessToJobObject" crash at startup.** The Electron main process spawned a second full Electron instance for the backend, which fails in installed apps (job-object restriction). The backend now spawns with `ELECTRON_RUN_AS_NODE=1` so the Electron binary runs in plain Node mode.
+- **EPIPE crash dialog on Windows** — packaged GUI apps have no valid stdout; all server-output logging is now guarded and stream errors are swallowed.
+- **`[server]` blank-line spam** in logs/diagnostics — empty output lines are filtered.
+- **electron-builder could not generate auto-update metadata** ("Cannot detect repository") — `repository` field added to the desktop package.
+
+### Verified
+- Packaged exe smoke-tested locally on Windows: process stays alive and the backend serves the UI on `127.0.0.1:4801`.
+
 ## [0.1.1] - 2026-08-20
 
 ### Fixed

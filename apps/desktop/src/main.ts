@@ -19,8 +19,18 @@ function serverEntry(): string {
   return resolve(__dirname, '../../../packages/server/dist/index.js');
 }
 
+/** Packaged Windows/Linux GUI apps have no valid stdout — never let logging throw (EPIPE). */
+function safeLog(fn: () => void): void {
+  try {
+    fn();
+  } catch {
+    /* ignore */
+  }
+}
+
 let server: ChildProcess | null = null;
 let window: BrowserWindow | null = null;
+let stderrTail = '';
 
 function startServer(workspace: string): ChildProcess {
   const entry = serverEntry();
@@ -30,41 +40,62 @@ function startServer(workspace: string): ChildProcess {
     process.resourcesPath && existsSync(join(process.resourcesPath, 'web'))
       ? join(process.resourcesPath, 'web')
       : undefined;
+
+  stderrTail = '';
   const child = spawn(process.execPath, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, NODE_ENV: 'production', LOCALAI_WEB_DIST: webDist ?? '' },
+    windowsHide: true,
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      LOCALAI_WEB_DIST: webDist ?? '',
+      // CRITICAL on Windows: run the Electron binary in plain Node mode.
+      // Without this the child re-initializes full Electron and dies with
+      // "AssignProcessToJobObject: The request is not supported."
+      ELECTRON_RUN_AS_NODE: '1',
+    },
   });
-  let stderrTail = '';
-  child.stdout?.on('data', (d) => console.log('[server]', String(d).trim()));
+  // Stream-level errors (EPIPE when parent pipes die) must never become uncaught exceptions.
+  child.stdout?.on('error', () => {});
+  child.stderr?.on('error', () => {});
+
+  let outTail = '';
+  child.stdout?.on('data', (d) => {
+    const line = String(d).replace(/\s+/g, ' ').trim();
+    if (!line) return;
+    outTail = (outTail + '\n' + line).split('\n').slice(-10).join('\n');
+    safeLog(() => console.log('[server]', line));
+  });
   child.stderr?.on('data', (d) => {
-    const line = String(d).trim();
-    stderrTail = (stderrTail + '\n' + line).split('\n').slice(-20).join('\n');
-    console.error('[server]', line);
+    const line = String(d).replace(/\s+/g, ' ').trim();
+    if (!line) return;
+    stderrTail = (stderrTail + '\n' + line).split('\n').slice(-15).join('\n');
+    safeLog(() => console.error('[server]', line));
   });
-  child.on('exit', (code) => console.log(`[server] exited with code ${code}`));
-  // Attach tail for diagnostics if startup fails.
-  (child as ChildProcess & { __stderrTail?: string }).__stderrTail = '';
-  child.stderr?.on('data', () => {
-    (child as ChildProcess & { __stderrTail?: string }).__stderrTail = stderrTail;
+  child.on('exit', (code) => safeLog(() => console.log(`[server] exited with code ${code}`)));
+  (child as ChildProcess & { __outTail?: string }).__outTail = '';
+  child.stdout?.on('data', () => {
+    (child as ChildProcess & { __outTail?: string }).__outTail = outTail;
   });
   return child;
 }
 
 function serverDiagnostics(): string {
-  const tail = (server as (ChildProcess & { __stderrTail?: string }) | null)?.__stderrTail;
-  return [
-    server ? `Server process exited with code ${server.exitCode}` : 'Server never started',
-    tail ? `\n--- server output ---\n${tail}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const c = server as (ChildProcess & { __outTail?: string }) | null;
+  const parts: string[] = [];
+  if (c?.exitCode !== null && c?.exitCode !== undefined) {
+    parts.push(`Server process exited with code ${c.exitCode}`);
+  }
+  if (c?.__outTail) parts.push(`--- server output ---\n${c.__outTail}`);
+  if (stderrTail) parts.push(`--- server errors ---\n${stderrTail}`);
+  return parts.join('\n\n');
 }
 
 /** Probe until the server HTTP endpoint answers. */
 async function waitForServer(timeoutMs = 30000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    if (server?.exitCode !== null && server?.exitCode !== undefined) {
+    if (server && server.exitCode !== null && server.exitCode !== undefined) {
       throw new Error(`The editor backend crashed during startup.\n\n${serverDiagnostics()}`);
     }
     try {
@@ -75,7 +106,10 @@ async function waitForServer(timeoutMs = 30000): Promise<void> {
     }
     await delay(250);
   }
-  throw new Error(`The editor backend did not become ready at ${URL} within ${timeoutMs / 1000}s.\n\n${serverDiagnostics()}`);
+  throw new Error(
+    `The editor backend did not become ready at ${URL} within ${timeoutMs / 1000}s.` +
+      (serverDiagnostics() ? `\n\n${serverDiagnostics()}` : ''),
+  );
 }
 
 async function createWindow(): Promise<void> {
@@ -105,7 +139,7 @@ app.whenReady().then(async () => {
     await waitForServer();
     await createWindow();
   } catch (e) {
-    console.error('Failed to start LocalAI Code Editor:', e);
+    safeLog(() => console.error('Failed to start LocalAI Code Editor:', e));
     dialog.showErrorBox(
       'LocalAI Code Editor failed to start',
       e instanceof Error ? e.message : String(e),
