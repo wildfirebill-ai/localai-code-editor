@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from './state';
 
 export function ChatPanel() {
-  const { providers, models, activeProvider, activeModel, setActiveProvider, setActiveModel, sendPrompt, running, chat, clearChat, connected } = useApp();
+  const { providers, models, activeProvider, activeModel, setActiveProvider, setActiveModel, sendPrompt, stop, running, chat, clearChat, connected } = useApp();
   const [prompt, setPrompt] = useState('');
 
   const submit = () => {
@@ -56,6 +56,11 @@ export function ChatPanel() {
           <button className="btn primary" onClick={submit} disabled={!connected || running}>
             {running ? 'Running…' : 'Run'}
           </button>
+          {running && (
+            <button className="btn subtle" title="Cancel the agent run" onClick={stop}>
+              ■ Stop
+            </button>
+          )}
           <button className="btn subtle" onClick={clearChat}>Clear</button>
         </div>
       </div>

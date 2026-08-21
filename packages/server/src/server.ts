@@ -23,6 +23,8 @@ export class EditorServer {
   fs: WorkspaceFs;
   skills: SkillStore;
   lsp: LanguageServerHost;
+  /** In-flight agent runs keyed by connection, so clients can cancel them. */
+  private readonly runControllers = new Map<WebSocket, AbortController>();
   private readonly http: ReturnType<typeof createServer>;
   private readonly wss: WebSocketServer;
 
@@ -172,6 +174,11 @@ export class EditorServer {
   }
 
   private handleConnection(ws: WebSocket): void {
+    // If the client disconnects mid-run, cancel its agent loop.
+    ws.on('close', () => {
+      this.runControllers.get(ws)?.abort();
+      this.runControllers.delete(ws);
+    });
     ws.on('message', async (data) => {
       let msg: { id?: number; method: string; params?: RpcParams };
       try {
@@ -249,6 +256,8 @@ export class EditorServer {
         const provider = this.providerRegistry.get(String(params.providerId));
         if (!provider) throw new Error(`Unknown provider: ${params.providerId}`);
         const baseSystem = String(params.systemPrompt ?? defaultSystemPrompt(this.config.workspace));
+        const controller = new AbortController();
+        this.runControllers.set(ws, controller);
         const gen = runAgent({
           runtime: {
             workspace: this.config.workspace,
@@ -264,15 +273,34 @@ export class EditorServer {
           model: String(params.model),
           systemPrompt: this.buildSystemPrompt(baseSystem),
           userPrompt: String(params.prompt),
+          signal: controller.signal,
           onEvent: (ev) => {
             ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'event', params: ev }));
           },
         });
-        for await (const _ev of gen) {
-          /* already forwarded via onEvent */
+        try {
+          for await (const _ev of gen) {
+            /* already forwarded via onEvent */
+          }
+          this.sendResult(ws, id, { ok: true });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          if (controller.signal.aborted || /abort/i.test(msg)) {
+            ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'event', params: { type: 'done' } }));
+            this.sendResult(ws, id, { ok: true, cancelled: true });
+          } else {
+            throw e;
+          }
+        } finally {
+          this.runControllers.delete(ws);
         }
-        this.sendResult(ws, id, { ok: true });
         return;
+      }
+      case 'agent.stop': {
+        const c = this.runControllers.get(ws);
+        if (!c) return this.sendResult(ws, id, { ok: false, error: 'No agent run in progress' });
+        c.abort();
+        return this.sendResult(ws, id, { ok: true });
       }
       case 'chat.send': {
         const provider = this.providerRegistry.get(String(params.providerId));

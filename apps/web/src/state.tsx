@@ -17,6 +17,8 @@ interface AppState {
   lspStatus: LspStatus[];
   chat: ChatEntry[];
   running: boolean;
+  /** Bumped after every agent run so the editor can reload agent-modified files. */
+  editorReloadKey: number;
   setActiveProvider: (id: string) => void;
   setActiveModel: (id: string) => void;
   setWorkspace: (path: string) => Promise<void>;
@@ -42,14 +44,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [providerHealth, setProviderHealth] = useState<Record<string, ProviderHealth>>({});
   const [models, setModels] = useState<ModelInfo[]>([]);
-  const [activeProvider, setActiveProvider] = useState('');
-  const [activeModel, setActiveModel] = useState('');
+  // Remembered across reloads so you don't re-pick Ollama → model every launch.
+  const [activeProvider, setActiveProviderState] = useState(() => localStorage.getItem('localai.provider') ?? '');
+  const [activeModel, setActiveModelState] = useState(() => localStorage.getItem('localai.model') ?? '');
+  const setActiveProvider = (id: string) => {
+    setActiveProviderState(id);
+    localStorage.setItem('localai.provider', id);
+  };
+  const setActiveModel = (id: string) => {
+    setActiveModelState(id);
+    localStorage.setItem('localai.model', id);
+  };
   const [status, setStatus] = useState<RepoStatus | null>(null);
   const [mcpStatus, setMcpStatus] = useState<McpServerStatus[]>([]);
   const [mcpTools, setMcpTools] = useState<McpTool[]>([]);
   const [lspStatus, setLspStatus] = useState<LspStatus[]>([]);
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [running, setRunning] = useState(false);
+  const [editorReloadKey, setEditorReloadKey] = useState(0);
   const [abort] = useState(() => new AbortController());
 
   useEffect(() => {
@@ -151,12 +163,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       off();
       setRunning(false);
+      // The agent may have edited the open file — let the editor pick it up.
+      setEditorReloadKey((k) => k + 1);
     }
   };
 
   const stop = () => {
-    // Best-effort abort is handled by the server's signal; the run is short-lived.
-    setRunning(false);
+    // Server aborts the run; agent.run then resolves and running flips false.
+    void client.request('agent.stop').catch(() => {});
   };
 
   const setWorkspace = async (path: string) => {
@@ -181,6 +195,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     lspStatus,
     chat,
     running,
+    editorReloadKey,
     setActiveProvider: onProviderChange,
     setActiveModel,
     setWorkspace,
