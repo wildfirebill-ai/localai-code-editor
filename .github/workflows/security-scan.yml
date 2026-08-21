@@ -55,7 +55,7 @@ jobs:
           echo "pnpm audit exited with $code (non-zero = advisories found)"
 
       - name: Trivy filesystem scan (lockfiles & configs)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -67,7 +67,7 @@ jobs:
 
       - name: Human-readable summary
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: repo-scan
           path: scan-results/
@@ -116,7 +116,7 @@ jobs:
         run: docker pull ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
@@ -128,7 +128,7 @@ jobs:
           exit-code: '0'
 
       - name: Human-readable summary
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Upload scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: image-scan
           path: scan-results/
@@ -161,7 +161,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download scan artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: scan-artifacts
 
