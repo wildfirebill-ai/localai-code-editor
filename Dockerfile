@@ -18,6 +18,11 @@ ENV NODE_ENV=production \
     LOCALAI_PORT=4801
 WORKDIR /app
 
+# Patch OS packages at build time — the base image ships with whatever apk
+# packages were baked when it was built, so this clears most container CVEs.
+RUN apk update && apk upgrade --no-cache && \
+    rm -rf /var/cache/apk/*
+
 RUN npm install -g pnpm@10 && \
     # Alpine lacks git by default; the server shells out to git for the panel
     apk add --no-cache git docker-cli docker-cli-compose docker-cli-buildx && \
