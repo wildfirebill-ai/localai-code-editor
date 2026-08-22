@@ -13,7 +13,12 @@ import { runAgent, builtinTools, defaultSystemPrompt, type Tool } from '@localai
 import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
 import { resolveWebDist } from './webdist.js';
-import { saveProviderOverrides } from './config.js';
+import {
+  applyLanguageServerOverrides,
+  loadLanguageServerOverrides,
+  saveLanguageServerOverrides,
+  saveProviderOverrides,
+} from './config.js';
 import { readFile } from 'node:fs/promises';
 import type { ServerConfig } from './config.js';
 
@@ -108,6 +113,10 @@ export class EditorServer {
     this.git = new GitService(config.workspace);
     this.fs = new WorkspaceFs(config.workspace);
     this.skills = new SkillStore();
+    config.languageServers = applyLanguageServerOverrides(
+      config.languageServers,
+      loadLanguageServerOverrides(config.workspace),
+    );
     this.lsp = new LanguageServerHost(config.workspace, config.languageServers);
     void this.skills.load({
       projectDir: config.workspace,
@@ -458,6 +467,34 @@ export class EditorServer {
         await this.lsp.stop(String(params.id));
         return this.sendResult(ws, id, { ok: true });
       }
+      case 'lsp.upsert': {
+        const cfg = {
+          id: String(params.id ?? '').trim(),
+          language: String(params.language ?? '').trim(),
+          extensions: Array.isArray(params.extensions)
+            ? params.extensions.map((e) => String(e).trim()).filter(Boolean)
+            : String(params.extensions ?? '').split(/[,\s]+/).map((e) => e.trim()).filter(Boolean),
+          command: String(params.command ?? '').trim(),
+          args: Array.isArray(params.args) ? params.args.map(String) : [],
+        };
+        if (!cfg.id || !cfg.language || !cfg.command) {
+          throw new Error('id, language and command are required');
+        }
+        const others = this.config.languageServers.filter((l) => l.id !== cfg.id);
+        this.config.languageServers = [...others, cfg];
+        saveLanguageServerOverrides(this.config.workspace, this.config.languageServers);
+        await this.restartLspHosts();
+        return this.sendResult(ws, id, { ok: true, languageServers: this.config.languageServers });
+      }
+      case 'lsp.remove': {
+        const lid = String(params.id ?? '');
+        const before = this.config.languageServers.length;
+        this.config.languageServers = this.config.languageServers.filter((l) => l.id !== lid);
+        if (this.config.languageServers.length === before) throw new Error(`Unknown language server: ${lid}`);
+        saveLanguageServerOverrides(this.config.workspace, this.config.languageServers);
+        await this.restartLspHosts();
+        return this.sendResult(ws, id, { ok: true });
+      }
 
       // ---- MCP ----
       case 'mcp.connect': {
@@ -521,6 +558,12 @@ export class EditorServer {
     }
   }
 
+  /** Recreate the LSP host so config changes take effect for newly opened files. */
+  private async restartLspHosts(): Promise<void> {
+    await this.lsp.stopAll();
+    this.lsp = new LanguageServerHost(this.config.workspace, this.config.languageServers);
+  }
+
   /** Switch the workspace at runtime: rebinds fs, git, skills, and LSP hosts. */
   private async setWorkspace(dir: string): Promise<{ ok: true; workspace: string }> {
     const target = resolve(dir.trim());
@@ -530,6 +573,10 @@ export class EditorServer {
 
     await this.lsp.stopAll();
     this.config.workspace = target;
+    this.config.languageServers = applyLanguageServerOverrides(
+      this.config.languageServers,
+      loadLanguageServerOverrides(target),
+    );
     this.git = new GitService(target);
     this.fs = new WorkspaceFs(target);
     this.skills = new SkillStore();

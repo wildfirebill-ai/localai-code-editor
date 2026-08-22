@@ -64,10 +64,45 @@ export function configPath(): string {
  */
 interface WorkspaceSettings {
   providers?: ProviderConfig[];
+  languageServers?: LanguageServerConfig[];
 }
 
 function settingsPath(workspace: string): string {
   return resolve(workspace, '.localai', 'settings.json');
+}
+
+export function loadLanguageServerOverrides(workspace: string): LanguageServerConfig[] {
+  const file = settingsPath(workspace);
+  if (!existsSync(file)) return [];
+  try {
+    const raw = JSON.parse(readFileSync(file, 'utf-8')) as WorkspaceSettings;
+    return Array.isArray(raw.languageServers) ? raw.languageServers : [];
+  } catch (e) {
+    console.error(`Ignoring malformed ${file}:`, e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
+export function saveLanguageServerOverrides(workspace: string, languageServers: LanguageServerConfig[]): void {
+  const file = settingsPath(workspace);
+  mkdirSync(resolve(file, '..'), { recursive: true });
+  // Preserve provider overrides when saving LSP changes: read current file first.
+  let providers: ProviderConfig[] | undefined;
+  try {
+    const raw = JSON.parse(readFileSync(file, 'utf-8')) as WorkspaceSettings;
+    providers = raw.providers;
+  } catch { /* no existing file */ }
+  writeFileSync(file, `${JSON.stringify({ providers, languageServers }, null, 2)}\n`, 'utf-8');
+}
+
+/** Merge LSP overrides over base config by id; new ids append. */
+export function applyLanguageServerOverrides(
+  base: LanguageServerConfig[],
+  overrides: LanguageServerConfig[]
+): LanguageServerConfig[] {
+  const byId = new Map(base.map((l) => [l.id, l]));
+  for (const o of overrides) byId.set(o.id, o);
+  return [...byId.values()];
 }
 
 export function loadProviderOverrides(workspace: string): ProviderConfig[] {

@@ -36,6 +36,8 @@ export function SettingsPanel() {
   const [err, setErr] = useState('');
   const [sysPrompt, setSysPrompt] = useState<string | null>(null);
   const [sysSaved, setSysSaved] = useState(false);
+  const [lspForm, setLspForm] = useState<null | { id: string; language: string; extensions: string; command: string; args: string }>(null);
+  const [lspErr, setLspErr] = useState('');
   const [wsInput, setWsInput] = useState('');
   const [wsErr, setWsErr] = useState('');
   const [recent] = useState(() => getRecentWorkspaces());
@@ -150,6 +152,32 @@ export function SettingsPanel() {
       cancelled = true;
     };
   }, [client, workspace]);
+
+  // ---- Language servers ----
+
+  const saveLsp = async () => {
+    setLspErr('');
+    if (!lspForm) return;
+    try {
+      await client.request('lsp.upsert', {
+        id: lspForm.id.trim(),
+        language: lspForm.language.trim(),
+        extensions: lspForm.extensions.split(/[,\s]+/).filter(Boolean),
+        command: lspForm.command.trim(),
+        args: lspForm.args ? lspForm.args.split(/\s+/).filter(Boolean) : [],
+      });
+      setLspForm(null);
+      await refresh();
+    } catch (e) {
+      setLspErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const removeLsp = async (id: string) => {
+    try { await client.request('lsp.remove', { id }); await refresh(); } catch (e) {
+      setLspErr(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   // ---- Workspace ----
 
@@ -287,16 +315,36 @@ export function SettingsPanel() {
       )}
 
       <div className="panel-title">Language Servers</div>
-      {lspStatus.length === 0 && <p className="muted" style={{ padding: '0 10px' }}>No language servers configured. Add them to <code>localai.config.json</code> under <code>languageServers</code>.</p>}
       <ul className="changes">
         {lspStatus.map((s) => (
           <li key={s.id} className="change">
             <span className={`dot ${s.running ? 'ok' : 'bad'}`} />
             <span className="change-path">{s.id} <span className="muted">({s.language})</span></span>
-            <span className="muted">{s.running ? `pid ${s.pid}` : (s.error ?? 'stopped')}</span>
+            <span className="muted">{s.running ? `pid ${s.pid}` : (s.error ?? 'not running')}</span>
+            <button className="btn tiny" onClick={() => void removeLsp(s.id)}>Remove</button>
           </li>
         ))}
+        {lspStatus.length === 0 && <li className="muted" style={{ listStyle: 'none' }}>None configured — install the binary (e.g. npm i -g typescript-language-server), then add it below.</li>}
       </ul>
+
+      {lspForm === null ? (
+        <button className="btn tiny" style={{ margin: '0 10px 10px' }} onClick={() => setLspForm({ id: '', language: '', extensions: '', command: '', args: '' })}>
+          + Add language server
+        </button>
+      ) : (
+        <div className="form" style={{ paddingBottom: 10 }}>
+          <input placeholder="id (e.g. typescript)" value={lspForm.id} onChange={(e) => setLspForm({ ...lspForm, id: e.target.value })} />
+          <input placeholder="language (e.g. typescript, python)" value={lspForm.language} onChange={(e) => setLspForm({ ...lspForm, language: e.target.value })} />
+          <input placeholder="extensions (.ts,.tsx)" value={lspForm.extensions} onChange={(e) => setLspForm({ ...lspForm, extensions: e.target.value })} />
+          <input placeholder="command (e.g. typescript-language-server)" value={lspForm.command} onChange={(e) => setLspForm({ ...lspForm, command: e.target.value })} />
+          <input placeholder="args (--stdio)" value={lspForm.args} onChange={(e) => setLspForm({ ...lspForm, args: e.target.value })} />
+          {lspErr && <p className="error">{lspErr}</p>}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="btn primary" onClick={() => void saveLsp()}>Save</button>
+            <button className="btn tiny" onClick={() => setLspForm(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="panel-title">MCP Servers</div>
       <div className="mcp-status">
