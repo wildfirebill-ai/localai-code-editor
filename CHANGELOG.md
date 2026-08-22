@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Docker image hardened and slimmed** - OS packages upgraded at build time (`apk upgrade`); the container now runs the single-file server bundle instead of the full workspace `node_modules` (which carried desktop devDeps like the electron-builder tree); bundled npm and its vendored vulnerable deps (tar, sigstore, brace-expansion, picomatch) removed since the runtime never uses npm.
+
+### Fixed
+- Security-scan workflow reliability: waits out GHCR CDN tag-propagation after image overwrites; publish job only runs when both scans succeed; trivy-action pinned to an existing version.
+
 ## [0.1.5] - 2026-08-21
 
 ### Added
