@@ -39,6 +39,8 @@ export interface ChatRequest {
   tools?: ToolDefinition[];
   temperature?: number;
   maxTokens?: number;
+  /** Ask the server for token usage on the final stream chunk. */
+  stream?: boolean;
   /** Abort controller signal to cancel streaming. */
   signal?: AbortSignal;
 }

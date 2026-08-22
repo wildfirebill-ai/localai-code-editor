@@ -34,6 +34,7 @@ export async function* runAgent(opts: RunAgentOptions): AsyncGenerator<AgentEven
   messages.push({ role: 'user', content: userPrompt });
 
   let iterations = 0;
+  let usageTotal: { promptTokens?: number; completionTokens?: number } | undefined = undefined;
 
   while (iterations < maxIterations) {
     iterations++;
@@ -60,6 +61,13 @@ export async function* runAgent(opts: RunAgentOptions): AsyncGenerator<AgentEven
         toolCalls = chunk.toolCalls;
       } else if (chunk.type === 'done') {
         toolCalls = chunk.message.toolCalls ?? [];
+        if (chunk.usage) {
+          const prev: { promptTokens?: number; completionTokens?: number } = usageTotal ?? {};
+          usageTotal = {
+            promptTokens: (prev.promptTokens ?? 0) + (chunk.usage.promptTokens ?? 0),
+            completionTokens: (prev.completionTokens ?? 0) + (chunk.usage.completionTokens ?? 0),
+          };
+        }
       }
     }
 
@@ -68,7 +76,7 @@ export async function* runAgent(opts: RunAgentOptions): AsyncGenerator<AgentEven
 
     // No tool calls requested => conversation complete.
     if (!toolCalls.length) {
-      const done: AgentEvent = { type: 'done', messages, iterations };
+      const done: AgentEvent = { type: 'done', messages, iterations, usage: usageTotal };
       onEvent?.(done);
       yield done;
       return;
@@ -106,6 +114,7 @@ export async function* runAgent(opts: RunAgentOptions): AsyncGenerator<AgentEven
     type: 'done',
     messages,
     iterations,
+    usage: usageTotal,
   };
   onEvent?.(stop);
   yield stop;

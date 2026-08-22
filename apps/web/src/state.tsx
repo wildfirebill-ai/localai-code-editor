@@ -17,6 +17,7 @@ interface AppState {
   lspStatus: LspStatus[];
   chat: ChatEntry[];
   running: boolean;
+  lastUsage: { promptTokens?: number; completionTokens?: number } | null;
   approvals: PendingApproval[];
   resolveApproval: (id: string, approve: boolean) => Promise<void>;
   /** Bumped after every agent run so the editor can reload agent-modified files. */
@@ -111,6 +112,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [running, setRunning] = useState(false);
   const [editorReloadKey, setEditorReloadKey] = useState(0);
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
+  const [lastUsage, setLastUsage] = useState<{ promptTokens?: number; completionTokens?: number } | null>(null);
   const [abort] = useState(() => new AbortController());
 
   useEffect(() => {
@@ -188,11 +190,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     appendChat({ role: 'user', content: prompt });
     setRunning(true);
     setApprovals([]);
+    setLastUsage(null);
     const reply: string[] = [];
     let sawTools = false;
     const off = client.onEvent((params) => {
       const ev = params as AgentEvent;
-      if (ev.type === 'delta') {
+      if (ev.type === 'done' && ev.usage) {
+        setLastUsage(ev.usage);
+      } else if (ev.type === 'delta') {
         reply.push(ev.content);
       } else if (ev.type === 'tool_call') {
         sawTools = true;
@@ -271,6 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     lspStatus,
     chat,
     running,
+    lastUsage,
     approvals,
     resolveApproval,
     editorReloadKey,

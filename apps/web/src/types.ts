@@ -93,7 +93,7 @@ export type AgentEvent =
   | { type: 'tool_call'; toolCall: { name: string } }
   | { type: 'tool_result'; result: { ok: boolean; content: string } }
   | { type: 'approval_request'; id: string; tool: string; args: string }
-  | { type: 'done' };
+  | { type: 'done'; usage?: { promptTokens?: number; completionTokens?: number } };
 
 export interface PendingApproval {
   id: string;

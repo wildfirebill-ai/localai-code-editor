@@ -16,7 +16,7 @@ export function ChatPanel() {
   const {
     providers, models, activeProvider, activeModel, setActiveProvider, setActiveModel,
     sendPrompt, stop, running, chat, clearChat, connected, client, workspace,
-    approvals, resolveApproval,
+    approvals, resolveApproval, lastUsage,
   } = useApp();
   const [prompt, setPrompt] = useState('');
   const [mention, setMention] = useState<MentionState>(EMPTY_MENTION);
@@ -191,6 +191,11 @@ export function ChatPanel() {
           </div>
         ))}
         {running && <div className="chat-entry assistant"><span className="spinner" /> working…</div>}
+        {!running && lastUsage && (lastUsage.promptTokens || lastUsage.completionTokens) && (
+          <div className="muted" style={{ padding: '0 10px', fontSize: 11 }}>
+            tokens: {lastUsage.promptTokens ?? 0} in · {lastUsage.completionTokens ?? 0} out
+          </div>
+        )}
       </div>
       <div className="chat-input" style={{ position: 'relative' }}>
         {mention.active && mention.options.length > 0 && (

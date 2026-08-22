@@ -6,6 +6,7 @@ import type {
   ModelInfo,
   ProviderHealth,
   ToolCall,
+  Usage,
 } from './types.js';
 
 interface OpenAIErrorBody {
@@ -97,8 +98,11 @@ export class OpenAICompatProvider implements LLMProvider {
           }
         : {}),
       stream: true,
+      stream_options: { include_usage: true },
       ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
       ...(request.maxTokens !== undefined ? { max_tokens: request.maxTokens } : {}),
+      // Ask compatible servers for token accounting on the final stream chunk.
+      ...(request.stream ? { stream_options: { include_usage: true } } : {}),
     };
 
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -125,6 +129,7 @@ export class OpenAICompatProvider implements LLMProvider {
     const toolCallsAccumulator = new Map<string, ToolCall>();
     let role = 'assistant';
     let finishReason: string | undefined;
+    let lastUsage: Usage | undefined;
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -155,6 +160,10 @@ export class OpenAICompatProvider implements LLMProvider {
           continue;
         }
         const choice = chunk.choices?.[0];
+        if (chunk.usage) {
+          // Final chunk (choices empty) carries token usage when requested.
+          lastUsage = chunk.usage as Usage;
+        }
         if (!choice) continue;
         if (choice.delta?.role) role = choice.delta.role;
         const deltaContent = choice.delta?.content;
@@ -217,6 +226,6 @@ export class OpenAICompatProvider implements LLMProvider {
     };
 
     void finishReason;
-    yield { type: 'done', message: finalMessage };
+    yield { type: 'done', message: finalMessage, usage: lastUsage };
   }
 }

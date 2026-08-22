@@ -45,7 +45,12 @@ export type AgentEvent =
   | { type: 'delta'; content: string }
   | { type: 'tool_call'; toolCall: ToolCall }
   | { type: 'tool_result'; result: ToolResult }
-  | { type: 'done'; messages: ChatMessage[]; iterations: number };
+  | {
+      type: 'done';
+      messages: ChatMessage[];
+      iterations: number;
+      usage?: { promptTokens?: number; completionTokens?: number };
+    };
 
 export interface RunAgentOptions {
   runtime: AgentRuntime;
