@@ -112,8 +112,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull image
-        run: docker pull ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+      - name: Pull image (retry while release pipeline pushes it)
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}"
+          for i in $(seq 1 40); do
+            if docker pull "$IMAGE"; then echo "Pulled on attempt $i"; exit 0; fi
+            echo "attempt $i: image not available yet, waiting 30s..."
+            sleep 30
+          done
+          echo "image $IMAGE not found after 20 minutes"; exit 1
 
       - name: Prepare results directory
         run: mkdir -p scan-results
