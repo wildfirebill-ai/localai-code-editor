@@ -50,6 +50,55 @@ export class EditorServer {
   lsp: LanguageServerHost;
   /** In-flight agent runs keyed by connection, so clients can cancel them. */
   private readonly runControllers = new Map<WebSocket, AbortController>();
+  /** Pending tool-approval resolvers keyed by connection, then approval id. */
+  private readonly pendingApprovals = new Map<WebSocket, Map<string, (approve: boolean) => void>>();
+
+  /** Tool names whose execution mutates the workspace or runs commands. */
+  private static readonly MUTATING_TOOLS = new Set(['execute_command', 'write_file']);
+
+  /**
+   * Wrap a tool so mutating calls pause until the user approves via the
+   * `agent.approval` RPC. Read-only tools pass through untouched.
+   */
+  private guardTool(ws: WebSocket, tool: Tool): Tool {
+    if (!EditorServer.MUTATING_TOOLS.has(tool.definition.name)) return tool;
+    let seq = 0;
+    return {
+      definition: {
+        ...tool.definition,
+        description:
+          tool.definition.description +
+          ' [approval mode: each call pauses until the user approves it in the UI.]',
+      },
+      execute: async (args, ctx) => {
+        const approvalId = `${Date.now()}-${++seq}`;
+        const argsPreview = JSON.stringify(args).slice(0, 600);
+        ws.send(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'event',
+            params: { type: 'approval_request', id: approvalId, tool: tool.definition.name, args: argsPreview },
+          }),
+        );
+        const approved = await new Promise<boolean>((resolve) => {
+          let map = this.pendingApprovals.get(ws);
+          if (!map) {
+            map = new Map();
+            this.pendingApprovals.set(ws, map);
+          }
+          map.set(approvalId, resolve);
+        });
+        if (!approved) {
+          return {
+            toolCallId: '',
+            ok: false,
+            content: 'DENIED by user. Do not retry the same action; ask how to proceed.',
+          };
+        }
+        return tool.execute(args, ctx);
+      },
+    };
+  }
   private readonly http: ReturnType<typeof createServer>;
   private readonly wss: WebSocketServer;
 
@@ -200,10 +249,12 @@ export class EditorServer {
   }
 
   private handleConnection(ws: WebSocket): void {
-    // If the client disconnects mid-run, cancel its agent loop.
+    // If the client disconnects mid-run, cancel its agent loop and deny pendings.
     ws.on('close', () => {
       this.runControllers.get(ws)?.abort();
       this.runControllers.delete(ws);
+      for (const resolve of this.pendingApprovals.get(ws)?.values() ?? []) resolve(false);
+      this.pendingApprovals.delete(ws);
     });
     ws.on('message', async (data) => {
       let msg: { id?: number; method: string; params?: RpcParams };
@@ -290,15 +341,17 @@ export class EditorServer {
         }
         const controller = new AbortController();
         this.runControllers.set(ws, controller);
+        const requireApproval = !!params.requireApproval;
         const gen = runAgent({
           runtime: {
             workspace: this.config.workspace,
             fs: this.fs,
             getTools: () => {
-              const tools = this.agentTools();
-              return this.config.allowShell
-                ? tools
-                : tools.filter((t) => t.definition.name !== 'execute_command');
+              let tools = this.agentTools();
+              if (!this.config.allowShell) {
+                tools = tools.filter((t) => t.definition.name !== 'execute_command');
+              }
+              return requireApproval ? tools.map((t) => this.guardTool(ws, t)) : tools;
             },
           },
           provider,
@@ -334,6 +387,14 @@ export class EditorServer {
         const c = this.runControllers.get(ws);
         if (!c) return this.sendResult(ws, id, { ok: false, error: 'No agent run in progress' });
         c.abort();
+        return this.sendResult(ws, id, { ok: true });
+      }
+      case 'agent.approval': {
+        const approvalId = String(params.id ?? '');
+        const pending = this.pendingApprovals.get(ws)?.get(approvalId);
+        if (!pending) return this.sendResult(ws, id, { ok: false, error: `Unknown approval: ${approvalId}` });
+        this.pendingApprovals.get(ws)!.delete(approvalId);
+        pending(!!params.approve);
         return this.sendResult(ws, id, { ok: true });
       }
       case 'chat.send': {

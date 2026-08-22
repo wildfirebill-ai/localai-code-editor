@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode, useRef } from 'react';
 import { RpcClient } from './rpc';
-import type { AgentEvent, ChatEntry, ModelInfo, ProviderInfo, ProviderHealth, RepoStatus, McpServerStatus, McpTool, LspStatus } from './types';
+import type { AgentEvent, ChatEntry, PendingApproval, ModelInfo, ProviderInfo, ProviderHealth, RepoStatus, McpServerStatus, McpTool, LspStatus } from './types';
 
 interface AppState {
   client: RpcClient;
@@ -17,13 +17,15 @@ interface AppState {
   lspStatus: LspStatus[];
   chat: ChatEntry[];
   running: boolean;
+  approvals: PendingApproval[];
+  resolveApproval: (id: string, approve: boolean) => Promise<void>;
   /** Bumped after every agent run so the editor can reload agent-modified files. */
   editorReloadKey: number;
   setActiveProvider: (id: string) => void;
   setActiveModel: (id: string) => void;
   setWorkspace: (path: string) => Promise<void>;
   refresh: () => Promise<void>;
-  sendPrompt: (prompt: string, params?: { temperature?: number; maxTokens?: number }) => Promise<void>;
+  sendPrompt: (prompt: string, params?: { temperature?: number; maxTokens?: number; requireApproval?: boolean }) => Promise<void>;
   stop: () => void;
   appendChat: (entry: ChatEntry) => void;
   clearChat: () => void;
@@ -108,6 +110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [running, setRunning] = useState(false);
   const [editorReloadKey, setEditorReloadKey] = useState(0);
+  const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [abort] = useState(() => new AbortController());
 
   useEffect(() => {
@@ -177,13 +180,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void loadModels(id);
   };
 
-  const sendPrompt = async (prompt: string, params?: { temperature?: number; maxTokens?: number }) => {
+  const sendPrompt = async (prompt: string, params?: { temperature?: number; maxTokens?: number; requireApproval?: boolean }) => {
     if (!activeProvider || !activeModel) {
       appendChat({ role: 'assistant', content: 'Select a provider and model first.' });
       return;
     }
     appendChat({ role: 'user', content: prompt });
     setRunning(true);
+    setApprovals([]);
     const reply: string[] = [];
     let sawTools = false;
     const off = client.onEvent((params) => {
@@ -193,6 +197,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else if (ev.type === 'tool_call') {
         sawTools = true;
         appendChat({ role: 'tool', content: `\u2699\uFE0F ${ev.toolCall.name}` });
+      } else if (ev.type === 'approval_request') {
+        const { id, tool, args } = ev;
+        setApprovals((a) => [...a, { id, tool, argsPreview: args }]);
       } else if (ev.type === 'tool_result') {
         appendChat({ role: 'tool', content: ev.result.ok ? `\u2713 done` : `\u274C ${ev.result.content}` });
       }
@@ -204,6 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         prompt,
         temperature: params?.temperature,
         maxTokens: params?.maxTokens,
+        requireApproval: params?.requireApproval,
       });
       if (reply.length) appendChat({ role: 'assistant', content: reply.join('') });
       if (sawTools) refresh();
@@ -211,10 +219,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appendChat({ role: 'assistant', content: `Error: ${e instanceof Error ? e.message : String(e)}` });
     } finally {
       off();
+      for (const a of approvalsRef.current) {
+        void client.request('agent.approval', { id: a.id, approve: false }).catch(() => {});
+      }
+      setApprovals([]);
       setRunning(false);
       notifyRunDone();
       // The agent may have edited the open file — let the editor pick it up.
       setEditorReloadKey((k) => k + 1);
+    }
+  };
+
+  // Ref so the finally-block can deny leftovers without stale closures.
+  const approvalsRef = useRef<PendingApproval[]>([]);
+  approvalsRef.current = approvals;
+
+  const resolveApproval = async (id: string, approve: boolean) => {
+    setApprovals((a) => a.filter((x) => x.id !== id));
+    try {
+      await client.request('agent.approval', { id, approve });
+    } catch {
+      /* run may have ended */
     }
   };
 
@@ -246,6 +271,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     lspStatus,
     chat,
     running,
+    approvals,
+    resolveApproval,
     editorReloadKey,
     setActiveProvider: onProviderChange,
     setActiveModel,

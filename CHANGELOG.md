@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Approve-before-apply mode (guardrails)** - toggle "approve edits" in the Agent panel; every file write and shell command pauses with an Approve/Deny card showing exactly what will run. Denied actions tell the agent to stop retrying; read-only tools pass through ungated. Verified end-to-end.
+
+### Fixed
+- Explorer `prompt()` replaced with inline inputs (Electron does not support window.prompt).
+
 ### Changed
 - **Docker image hardened and slimmed** - OS packages upgraded at build time (`apk upgrade`); the container now runs the single-file server bundle instead of the full workspace `node_modules` (which carried desktop devDeps like the electron-builder tree); bundled npm and its vendored vulnerable deps (tar, sigstore, brace-expansion, picomatch) removed since the runtime never uses npm.
 

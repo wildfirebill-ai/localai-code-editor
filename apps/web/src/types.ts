@@ -92,7 +92,15 @@ export type AgentEvent =
   | { type: 'delta'; content: string }
   | { type: 'tool_call'; toolCall: { name: string } }
   | { type: 'tool_result'; result: { ok: boolean; content: string } }
+  | { type: 'approval_request'; id: string; tool: string; args: string }
   | { type: 'done' };
+
+export interface PendingApproval {
+  id: string;
+  tool: string;
+  /** JSON-stringified tool arguments (truncated by the server). */
+  argsPreview: string;
+}
 
 export interface ChatEntry {
   role: 'user' | 'assistant' | 'tool' | 'system';

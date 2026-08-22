@@ -16,10 +16,12 @@ export function ChatPanel() {
   const {
     providers, models, activeProvider, activeModel, setActiveProvider, setActiveModel,
     sendPrompt, stop, running, chat, clearChat, connected, client, workspace,
+    approvals, resolveApproval,
   } = useApp();
   const [prompt, setPrompt] = useState('');
   const [mention, setMention] = useState<MentionState>(EMPTY_MENTION);
   const [showParams, setShowParams] = useState(false);
+  const [guardrails, setGuardrails] = useState(() => localStorage.getItem('localai.guardrails') === '1');
   const [temperature, setTemperature] = useState(() => localStorage.getItem('localai.temperature') ?? '');
   const [maxTokens, setMaxTokens] = useState(() => localStorage.getItem('localai.maxTokens') ?? '');
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -30,6 +32,9 @@ export function ChatPanel() {
   useEffect(() => {
     localStorage.setItem('localai.maxTokens', maxTokens);
   }, [maxTokens]);
+  useEffect(() => {
+    localStorage.setItem('localai.guardrails', guardrails ? '1' : '0');
+  }, [guardrails]);
 
   /** Detect an @mention being typed before the caret. */
   const detectMention = (text: string, caret: number) => {
@@ -87,12 +92,13 @@ export function ChatPanel() {
       if (blocks.length) finalPrompt = `${blocks.join('\n\n')}\n\n${p}`;
     }
 
-    const params: { temperature?: number; maxTokens?: number } = {};
+    const params: { temperature?: number; maxTokens?: number; requireApproval?: boolean } = {};
     const t = parseFloat(temperature);
     const mt = parseInt(maxTokens, 10);
     if (!Number.isNaN(t)) params.temperature = t;
     if (!Number.isNaN(mt) && mt > 0) params.maxTokens = mt;
 
+    if (guardrails) params.requireApproval = true;
     await sendPrompt(finalPrompt, params);
   };
 
@@ -127,6 +133,14 @@ export function ChatPanel() {
         <button className="btn tiny" title="Sampling parameters" onClick={() => setShowParams((v) => !v)}>
           ⚙
         </button>
+        <label
+          className="muted"
+          style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+          title="Pause before any file write or command so you can approve it"
+        >
+          <input type="checkbox" checked={guardrails} onChange={(e) => setGuardrails(e.target.checked)} />
+          approve edits
+        </label>
       </div>
       {showParams && (
         <div className="row" style={{ gap: 6, padding: '4px 10px', alignItems: 'center' }}>
@@ -142,6 +156,26 @@ export function ChatPanel() {
             value={maxTokens} onChange={(e) => setMaxTokens(e.target.value)}
             style={{ width: 80 }}
           />
+        </div>
+      )}
+      {approvals.length > 0 && (
+        <div className="approval-list">
+          {approvals.map((a) => {
+            let pretty = a.argsPreview;
+            try { pretty = JSON.stringify(JSON.parse(a.argsPreview), null, 2); } catch { /* keep raw */ }
+            return (
+              <div key={a.id} className="approval-card">
+                <div className="approval-title">
+                  ⚠ Approve <code>{a.tool}</code>?
+                </div>
+                <pre className="approval-args">{pretty}</pre>
+                <div className="row" style={{ gap: 6 }}>
+                  <button className="btn primary" onClick={() => void resolveApproval(a.id, true)}>Approve</button>
+                  <button className="btn subtle" onClick={() => void resolveApproval(a.id, false)}>Deny</button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       <div className="chat-log">
