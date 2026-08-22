@@ -138,6 +138,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Wait for GHCR tag propagation
+        if: github.event_name == 'workflow_run'
+        run: |
+          echo "GHCR CDN can serve a stale manifest right after an overwrite —"
+          echo "waiting 3 minutes for :${{ needs.gate.outputs.image_tag }} to settle."
+          sleep 180
+
       - name: Pull image (short retry for registry propagation)
         run: |
           IMAGE="ghcr.io/${{ github.repository }}:${{ needs.gate.outputs.image_tag }}"
