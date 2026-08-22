@@ -25,10 +25,14 @@ WORKDIR /app
 
 # Patch OS packages at build time — the base image ships with whatever apk
 # packages were baked when it was built, so this clears most container CVEs.
+# The official node image also bundles npm with vulnerable vendored deps
+# (tar, sigstore, brace-expansion...) — we run a single .cjs file, so npm goes too.
 RUN apk update && apk upgrade --no-cache && \
     # Alpine lacks git by default; the server shells out to git for the panel
     apk add --no-cache git docker-cli docker-cli-compose docker-cli-buildx && \
-    rm -rf /var/cache/apk/* && \
+    rm -rf /var/cache/apk/* \
+           /usr/local/lib/node_modules/npm \
+           /usr/local/bin/npm /usr/local/bin/npx && \
     # docker CLI needs a working config dir even without a daemon locally
     mkdir -p /root/.docker
 
