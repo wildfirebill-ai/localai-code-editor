@@ -64,6 +64,9 @@ LocalAI Code Editor is a multi-platform code editor with a built-in **agentic AI
 | **Language Servers** | LSP-based completion, hover, diagnostics, definition, references, rename |
 | **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log |
 | **File Explorer** | Browse, open, edit, save — plus New File/Folder, Rename, and Delete from the sidebar |
+| **Quick Open & Search** | Ctrl+P fuzzy file finder; workspace-wide text search grouped by file |
+| **@file Mentions** | Type `@` in the agent prompt to attach file contents as context, with autocomplete |
+| **Markdown Preview** | Toggle Edit/Preview for `.md` files |
 | **Monaco Editor** | The industry-standard editor used by VS Code, running locally |
 | **Multi-Platform** | Windows, macOS, Linux (Electron), and any web-capable device (Docker) |
 
@@ -183,9 +186,11 @@ Create a `localai.config.json` in your workspace (full example: [`localai.config
 
 ## 🧠 Agent Skills
 
-Agent Skills are Markdown files with frontmatter that teach the AI your conventions, workflows, and best practices. Drop a `SKILL.md` into either location:
+**51 production-grade skills ship built-in** and work in every workspace — commit, test-and-fix, typecheck-fix, lint-clean, debug-failure, refactor-safe, docker-build-run, dependency-update, git-release, write-docs, security-check, and 40 more covering git, quality, testing, performance, frontend, backend, ops, and AI integration. Enable/disable them from the **Skills** panel.
 
-- **Project skills:** `<workspace>/.localai/skills/<name>/SKILL.md`
+You can also author your own. Skills are Markdown files with frontmatter that teach the AI your conventions, workflows, and best practices. Drop a `SKILL.md` into either location:
+
+- **Project skills:** `<workspace>/.localai/skills/<name>/SKILL.md` (overrides builtins)
 - **User (global) skills:** `~/.localai/skills/<name>/SKILL.md`
 
 ```markdown
@@ -195,6 +200,8 @@ description: Typecheck a package with pnpm typecheck before committing
 ---
 Run `pnpm typecheck` from the package root and fix any errors.
 ```
+
+See [docs/skill-spec.md](docs/skill-spec.md) for the full format, or ask the agent to use the built-in `skill-author` skill to write one for you.
 
 Project skills override same-named global skills. The agent loads them on demand via the `read_skill` tool. See [example skills](.localai/skills/) and [SKILL.md spec](https://github.com/wildfirebill-ai/localai-code-editor/blob/main/docs/skill-spec.md).
 
@@ -388,6 +395,8 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.1.6](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.6) | 2026-08-22 | Electron 43 (clears flagged CVEs), Docker slimmed + hardened, automated vuln scanning |
+| [v0.1.5](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.5) | 2026-08-21 | Quick Open (Ctrl+P), file search, @file mentions, 51 builtin skills, md preview |
 | [v0.1.4](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.4) | 2026-08-21 | Workspace picker + runtime switching, Explorer file ops (new/rename/delete) |
 | [v0.1.3](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.3) | 2026-08-21 | Provider connection settings UI — add/edit/test/remove at runtime |
 | [v0.1.2](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.2) | 2026-08-21 | Fix Windows launch crash (ELECTRON_RUN_AS_NODE), EPIPE guard |
