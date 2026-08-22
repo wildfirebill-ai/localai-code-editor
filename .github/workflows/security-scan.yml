@@ -7,24 +7,61 @@ name: Security Scan
 on:
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC
-  push:
-    tags: ['v*'] # NOTE: release:published doesn't fire when CI creates the release with GITHUB_TOKEN — tag pushes are the reliable trigger
+  # Runs AFTER the Docker workflow completes so the freshly pushed image exists.
+  # (release:published / tag-push races the image build — see git history)
+  workflow_run:
+    workflows: ['Docker (GHCR)']
+    types: [completed]
   workflow_dispatch:
     inputs:
       image_tag:
         description: 'Docker image tag to scan (defaults to newest release)'
         required: false
         default: 'latest'
-  release:
-    types: [published]
 
 concurrency:
   group: security-scan-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  # ---- Repository dependency vulnerabilities (lockfile + fs) ----
+  # workflow_run fires for every Docker run — decide here whether to scan.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      scan: ${{ steps.decide.outputs.scan }}
+      image_tag: ${{ steps.decide.outputs.image_tag }}
+    steps:
+      - name: Decide whether to scan
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          INPUT_TAG: ${{ github.event.inputs.image_tag }}
+        run: |
+          scan=true
+          tag="$INPUT_TAG"
+          [ -z "$tag" ] && tag="latest"
+
+          if [ "$EVENT" = "workflow_run" ]; then
+            # Only scan successful Docker runs from main or release tags (vX.Y.Z)
+            scan=false
+            if [ "$CONCLUSION" = "success" ]; then
+              if [ "$BRANCH" = "main" ]; then
+                scan=true; tag="latest"
+              elif [[ "$BRANCH" =~ ^v[0-9]+ ]]; then
+                scan=true; tag="${BRANCH#v}"
+              fi
+            fi
+          fi
+
+          echo "scan=$scan" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "decision: scan=$scan image_tag=$tag (event=$EVENT branch=$BRANCH conclusion=$CONCLUSION)"
+
   repo-scan:
+    needs: [gate]
+    if: needs.gate.outputs.scan == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -87,24 +124,13 @@ jobs:
 
   # ---- Published Docker image vulnerabilities ----
   image-scan:
+    needs: [gate]
+    if: needs.gate.outputs.scan == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
     steps:
-      - name: Resolve image tag
-        id: tag
-        run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            # release tag v1.2.3 -> image tag 1.2.3
-            echo "tag=${{ github.event.release.tag_name }}" | sed 's/^v//' >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            # pushed tag v1.2.3 -> image tag 1.2.3
-            echo "tag=${{ github.ref_name }}" | sed 's/^v//' >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ github.event.inputs.image_tag || 'latest' }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -112,15 +138,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull image (retry while release pipeline pushes it)
+      - name: Pull image (short retry for registry propagation)
         run: |
-          IMAGE="ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}"
-          for i in $(seq 1 40); do
+          IMAGE="ghcr.io/${{ github.repository }}:${{ needs.gate.outputs.image_tag }}"
+          for i in $(seq 1 6); do
             if docker pull "$IMAGE"; then echo "Pulled on attempt $i"; exit 0; fi
-            echo "attempt $i: image not available yet, waiting 30s..."
-            sleep 30
+            echo "attempt $i: pull failed, waiting 15s..."
+            sleep 15
           done
-          echo "image $IMAGE not found after 20 minutes"; exit 1
+          echo "image $IMAGE not available"; exit 1
 
       - name: Prepare results directory
         run: mkdir -p scan-results
@@ -129,7 +155,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
-          image-ref: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+          image-ref: ghcr.io/${{ github.repository }}:${{ needs.gate.outputs.image_tag }}
           format: json
           output: scan-results/trivy-image.json
           severity: HIGH,CRITICAL
@@ -141,7 +167,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
-          image-ref: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.tag }}
+          image-ref: ghcr.io/${{ github.repository }}:${{ needs.gate.outputs.image_tag }}
           format: table
           severity: HIGH,CRITICAL
           scanners: vuln
@@ -159,7 +185,7 @@ jobs:
 
   # ---- Publish results into VULNERABILITIES.md ----
   publish-report:
-    needs: [repo-scan, image-scan]
+    needs: [gate, repo-scan, image-scan]
     if: needs.repo-scan.result == 'success' && needs.image-scan.result == 'success'
     runs-on: ubuntu-latest
     permissions:
@@ -181,7 +207,8 @@ jobs:
           REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EVENT_NAME: ${{ github.event_name }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          IMAGE_TAG: ${{ needs.gate.outputs.image_tag }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
           INPUT_TAG: ${{ github.event.inputs.image_tag }}
         run: node scripts/generate-security-report.js
 

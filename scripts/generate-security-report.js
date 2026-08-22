@@ -26,8 +26,8 @@ const END = '<!-- SECURITY-SCAN:END -->';
 const REPO = process.env.REPO || 'wildfirebill-ai/localai-code-editor';
 const RUN_URL = process.env.RUN_URL || '';
 const EVENT = process.env.EVENT_NAME || 'manual';
-const RELEASE_TAG = process.env.RELEASE_TAG || '';
-const INPUT_TAG = process.env.INPUT_TAG || '';
+const IMAGE_TAG = process.env.IMAGE_TAG || 'latest';
+const BRANCH = process.env.BRANCH || '';
 
 function readJson(rel) {
   const p = path.join(ARTIFACTS, rel);
@@ -180,10 +180,7 @@ function order_(s) {
 /* ---------- Build section ---------- */
 
 function main() {
-  const imageTag =
-    EVENT === 'release'
-      ? (RELEASE_TAG.replace(/^v/, '') || 'latest')
-      : (INPUT_TAG || 'latest');
+  const imageTag = IMAGE_TAG;
 
   const trivyImage = parseTrivy(readJson('image-scan/trivy-image.json'));
   const trivyFs = parseTrivy(readJson('repo-scan/trivy-fs.json'));
@@ -191,13 +188,11 @@ function main() {
 
   const now = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
   const refLabel =
-    EVENT === 'release'
-      ? `release \`${RELEASE_TAG}\``
-      : EVENT === 'push'
-        ? 'tag push (main release pipeline)'
-        : EVENT === 'schedule'
-          ? 'scheduled weekly scan (main @ HEAD)'
-          : `manual dispatch (${EVENT})`;
+    EVENT === 'workflow_run'
+      ? `Docker build for \`${BRANCH}\` (image \`${imageTag}\`)`
+      : EVENT === 'schedule'
+        ? 'scheduled weekly scan (latest image)'
+        : `manual dispatch (image \`${imageTag}\`)`;
 
   const section = [
     START,
