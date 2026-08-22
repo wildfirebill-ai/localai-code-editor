@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp, getRecentWorkspaces } from './state';
 import type { McpServerStatus, ProviderInfo } from './types';
 
@@ -34,6 +34,8 @@ export function SettingsPanel() {
   const { client, workspace, setWorkspace, providers, providerHealth, mcpStatus, mcpTools, lspStatus, refresh } = useApp();
   const [form, setForm] = useState<McpForm>(EMPTY_MCP);
   const [err, setErr] = useState('');
+  const [sysPrompt, setSysPrompt] = useState<string | null>(null);
+  const [sysSaved, setSysSaved] = useState(false);
   const [wsInput, setWsInput] = useState('');
   const [wsErr, setWsErr] = useState('');
   const [recent] = useState(() => getRecentWorkspaces());
@@ -133,6 +135,22 @@ export function SettingsPanel() {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    client
+      .request<{ exists: boolean }>('fs.stat', { path: '.localai/system.md' })
+      .then(async (s) => {
+        if (cancelled) return;
+        if (!s.exists) return setSysPrompt('');
+        const content = await client.request<string>('fs.read', { path: '.localai/system.md' });
+        if (!cancelled) setSysPrompt(content);
+      })
+      .catch(() => !cancelled && setSysPrompt(''));
+    return () => {
+      cancelled = true;
+    };
+  }, [client, workspace]);
+
   // ---- Workspace ----
 
   const pickFolder = async () => {
@@ -193,6 +211,40 @@ export function SettingsPanel() {
           </ul>
         </>
       )}
+
+      <div className="panel-title">Agent Instructions (.localai/system.md)</div>
+      <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
+        Appended to every agent run in this workspace — conventions, guardrails, style rules.
+      </p>
+      <textarea
+        className="system-prompt-editor"
+        placeholder={"e.g. Always use TypeScript strict mode.\nNever touch files under vendor/.\nPrefer pnpm over npm."}
+        value={sysPrompt ?? ''}
+        onChange={(e) => { setSysPrompt(e.target.value); setSysSaved(false); }}
+        rows={6}
+        style={{ width: 'calc(100% - 20px)', margin: '0 10px 6px', fontFamily: 'monospace', fontSize: 12 }}
+      />
+      <div style={{ padding: '0 10px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
+        <button
+          className="btn tiny primary"
+          onClick={async () => {
+            try {
+              if ((sysPrompt ?? '').trim()) {
+                await client.request('fs.write', { path: '.localai/system.md', content: sysPrompt ?? '' });
+              } else {
+                await client.request('fs.delete', { path: '.localai/system.md' }).catch(() => {});
+              }
+              setSysSaved(true);
+              setTimeout(() => setSysSaved(false), 2000);
+            } catch (e) {
+              setSysSaved(false);
+            }
+          }}
+        >
+          Save instructions
+        </button>
+        {sysSaved && <span className="muted" style={{ fontSize: 11 }}>✓ saved — applies to next agent run</span>}
+      </div>
 
       <div className="panel-title">LLM Providers</div>
       <div className="mcp-status">
