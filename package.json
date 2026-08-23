@@ -1,6 +1,6 @@
 {
   "name": "localai-code-editor",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "description": "A free, open-source, self-hosted AI code editor powered entirely by your local LLM — no cloud, no API keys, no telemetry. Features agentic AI assistant, MCP support, agent skills, LSP IntelliSense, and full git panel.",
   "license": "MIT",

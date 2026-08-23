@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.7] - 2026-08-22
+## [0.1.8] - 2026-08-22
+
+### Added
+- **Agent instructions editor** - per-workspace system prompt (.localai/system.md) editable from Settings; applies to the next agent run.
+- **Token usage per agent run** - prompt/completion totals shown after each run, accumulated across tool iterations.
+- **Language server management UI** - add/remove/monitor LSP servers from Settings; persists per workspace and takes effect immediately.
+
+### Changed
+- Docker image hardened further: apk upgrade at build time, dependency-free server bundle instead of full node_modules, bundled npm removed. Image scans clean (0 findings).
+- Security-scan reliability: chained off Docker completion via workflow_run, GHCR propagation wait, publish gated on scan success.
+
+## [0.1.7]
 
 ### Added
 - **Approve-before-apply mode (guardrails)** - toggle "approve edits" in the Agent panel; every file write and shell command pauses with an Approve/Deny card showing exactly what will run. Denied actions tell the agent to stop retrying; read-only tools pass through ungated. Verified end-to-end.
