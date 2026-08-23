@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from './state';
+import { calculateCost } from './cost';
 import { getAllFiles, fuzzyFilter } from './files';
 
 interface MentionState {
@@ -13,10 +14,10 @@ interface MentionState {
 const EMPTY_MENTION: MentionState = { active: false, query: '', start: -1, options: [], sel: 0 };
 
 export function ChatPanel() {
-  const {
+const {
     providers, models, activeProvider, activeModel, setActiveProvider, setActiveModel,
     sendPrompt, stop, running, chat, clearChat, connected, client, workspace,
-    approvals, resolveApproval, lastUsage,
+    approvals, resolveApproval, lastUsage, setLastCost,
   } = useApp();
   const [prompt, setPrompt] = useState('');
   const [mention, setMention] = useState<MentionState>(EMPTY_MENTION);
@@ -68,7 +69,7 @@ export function ChatPanel() {
     if (ta) detectMention(text, ta.selectionStart ?? text.length);
   };
 
-  const submit = async () => {
+    const submit = async () => {
     if (mention.active && mention.options.length) return completeMention(mention.options[mention.sel]);
     const p = prompt.trim();
     if (!p || running) return;
@@ -100,6 +101,8 @@ export function ChatPanel() {
 
     if (guardrails) params.requireApproval = true;
     await sendPrompt(finalPrompt, params);
+    if (lastUsage) setLastCost(calculateCost(lastUsage.promptTokens ?? 0, lastUsage.completionTokens ?? 0, activeModel));
+    if (lastUsage) setLastCost(calculateCost(lastUsage.promptTokens ?? 0, lastUsage.completionTokens ?? 0, activeModel));
   };
 
   const onTaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -190,10 +193,13 @@ export function ChatPanel() {
             <div className="chat-content">{c.content}</div>
           </div>
         ))}
-        {running && <div className="chat-entry assistant"><span className="spinner" /> working…</div>}
+{running && <div className="chat-entry assistant"><span className="spinner" /> working…</div>}
         {!running && lastUsage && (lastUsage.promptTokens || lastUsage.completionTokens) && (
-          <div className="muted" style={{ padding: '0 10px', fontSize: 11 }}>
+          <div className="muted" style={{ padding: '0 10px', fontSize: 11, display: 'flex', gap: 8, alignItems: 'center' }}>
             tokens: {lastUsage.promptTokens ?? 0} in · {lastUsage.completionTokens ?? 0} out
+            <span style={{ marginLeft: 8, color: 'var(--yellow)' }}>
+              ~${calculateCost(lastUsage.promptTokens ?? 0, lastUsage.completionTokens ?? 0, activeModel).toFixed(4)}
+            </span>
           </div>
         )}
       </div>

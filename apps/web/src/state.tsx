@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode, useRef } from 'react';
 import { RpcClient } from './rpc';
+import { calculateCost } from './cost';
 import type { AgentEvent, ChatEntry, PendingApproval, ModelInfo, ProviderInfo, ProviderHealth, RepoStatus, McpServerStatus, McpTool, LspStatus } from './types';
 
 interface AppState {
@@ -18,6 +19,7 @@ interface AppState {
   chat: ChatEntry[];
   running: boolean;
   lastUsage: { promptTokens?: number; completionTokens?: number } | null;
+  lastCost: number | null;
   approvals: PendingApproval[];
   resolveApproval: (id: string, approve: boolean) => Promise<void>;
   /** Bumped after every agent run so the editor can reload agent-modified files. */
@@ -27,6 +29,7 @@ interface AppState {
   setWorkspace: (path: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendPrompt: (prompt: string, params?: { temperature?: number; maxTokens?: number; requireApproval?: boolean }) => Promise<void>;
+  setLastCost: (cost: number) => void;
   stop: () => void;
   appendChat: (entry: ChatEntry) => void;
   clearChat: () => void;
@@ -113,6 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [editorReloadKey, setEditorReloadKey] = useState(0);
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [lastUsage, setLastUsage] = useState<{ promptTokens?: number; completionTokens?: number } | null>(null);
+  const [lastCost, setLastCost] = useState<number | null>(null);
   const [abort] = useState(() => new AbortController());
 
   useEffect(() => {
@@ -197,6 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const ev = params as AgentEvent;
       if (ev.type === 'done' && ev.usage) {
         setLastUsage(ev.usage);
+        setLastCost(calculateCost(ev.usage.promptTokens ?? 0, ev.usage.completionTokens ?? 0, activeModel));
       } else if (ev.type === 'delta') {
         reply.push(ev.content);
       } else if (ev.type === 'tool_call') {
@@ -277,6 +282,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     chat,
     running,
     lastUsage,
+    lastCost,
     approvals,
     resolveApproval,
     editorReloadKey,
@@ -285,6 +291,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setWorkspace,
     refresh,
     sendPrompt,
+    setLastCost,
     stop,
     appendChat,
     clearChat,
