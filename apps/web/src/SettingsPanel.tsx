@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp, getRecentWorkspaces } from './state';
-import type { McpServerStatus, ProviderInfo } from './types';
+import { McpDiscover } from './McpDiscover';
+import type { ProviderInfo } from './types';
 
 type McpForm = {
   name: string;
@@ -66,11 +67,6 @@ export function SettingsPanel() {
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }
-  };
-
-  const disconnect = async (name: string) => {
-    await client.request('mcp.disconnect', { name });
-    await refresh();
   };
 
   // ---- Providers ----
@@ -347,17 +343,11 @@ export function SettingsPanel() {
       )}
 
       <div className="panel-title">MCP Servers</div>
-      <div className="mcp-status">
-        {mcpStatus.length === 0 && <p className="muted">No MCP servers connected.</p>}
-        {mcpStatus.map((s: McpServerStatus) => (
-          <div key={s.name} className="mcp-item">
-            <span className={`dot ${s.connected ? 'ok' : 'bad'}`} />
-            <span className="change-path">{s.name}</span>
-            <span className="muted">{s.transport} · {s.toolCount} tools</span>
-            <button className="btn tiny" onClick={() => void disconnect(s.name)}>Disconnect</button>
-          </div>
-        ))}
-      </div>
+      <McpDiscover
+        mcpStatus={mcpStatus}
+        client={client}
+        refresh={refresh}
+      />
 
       <div className="panel-title">Connected Tools</div>
       <ul className="tools">
