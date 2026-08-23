@@ -18,7 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Cost display shows correct decimal places (4 digits).
 
-## [0.1.8] - 2026-08-22
+## [0.1.9] - 2026-08-23
+
+### Added
+- **MCP Server Discovery** - curated registry of 15+ known MCP servers (filesystem, git, database, web, cloud, AI, utility) with search, category filtering, and one-click install.
+- **Cost tracking per agent run** - token usage and estimated cost shown after each run.
+
+### Changed
+- MCP Servers panel now has "Installed" and "Discover" tabs.
+
+### Fixed
+- MCP server type definitions: added argsDescription field to registry entries.## [0.1.8] - 2026-08-22
+ - 2026-08-22
 
 ### Added
 - **Agent instructions editor** - per-workspace system prompt (.localai/system.md) editable from Settings; applies to the next agent run.
