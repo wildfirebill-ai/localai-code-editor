@@ -1,5 +1,8 @@
 # ---- Builder stage: install deps + compile all packages ----
-FROM node:22-alpine AS build
+# $BUILDPLATFORM runs this stage natively (amd64 on CI) regardless of target
+# arch — the output is pure JS/HTML/skills with no native binaries, so running
+# it under QEMU emulation for arm64 is pure waste (and hangs pnpm install).
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 RUN npm install -g pnpm@10
 
