@@ -170,3 +170,19 @@ select, input {
   word-break: break-all;
   margin: 0 0 6px;
 }
+
+.diff-view { font-family: monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.diff-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-panel); border-bottom: 1px solid var(--border); font-weight: 600; }
+.diff-stats span { margin-left: 6px; }
+.diff-add { color: var(--green); }
+.diff-remove { color: var(--red); }
+.diff-context { color: var(--fg-muted); }
+.diff-content { max-height: 400px; overflow-y: auto; }
+.diff-line { display: flex; padding: 1px 8px; white-space: pre-wrap; }
+.diff-add { background: rgba(78, 201, 176, 0.1); }
+.diff-remove { background: rgba(244, 135, 113, 0.1); }
+.diff-line-num { min-width: 40px; text-align: right; padding-right: 8px; color: var(--fg-muted); user-select: none; }
+.diff-line-prefix { width: 16px; text-align: center; font-weight: 600; user-select: none; }
+.diff-add .diff-line-prefix { color: var(--green); }
+.diff-remove .diff-line-prefix { color: var(--red); }
+.diff-line-text { flex: 1; overflow-x: auto; }
