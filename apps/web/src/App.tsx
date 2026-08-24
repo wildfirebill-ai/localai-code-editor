@@ -6,10 +6,11 @@ import { ChatPanel } from './ChatPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { SkillsPanel } from './SkillsPanel';
 import { SearchPanel } from './SearchPanel';
+import { TaskHistory } from './TaskHistory';
 import { QuickOpen } from './QuickOpen';
 import { EditorPane } from './EditorPane';
 
-type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp';
+type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp' | 'history';
 type Panel = 'editor' | 'chat';
 
 function Workspace() {
@@ -48,6 +49,7 @@ function Workspace() {
           </button>
           <button title="MCP Servers" className={`icon-btn ${side === 'mcp' ? 'active' : ''}`} onClick={() => setSide('mcp')}>⚡</button>
           <button title="Agent Skills" className={`icon-btn ${side === 'skills' ? 'active' : ''}`} onClick={() => setSide('skills')}>🧠</button>
+          <button title="Task History" className={`icon-btn ${side === 'history' ? 'active' : ''}`} onClick={() => setSide('history')}>📜</button>
           <div className="spacer" />
           <button title="Quick Open (Ctrl+P)" className="icon-btn" onClick={() => setQuickOpen(true)}>⌘</button>
           <button title="Agent panel" className={`icon-btn ${panel === 'chat' ? 'active' : ''}`} onClick={() => setPanel(panel === 'chat' ? 'editor' : 'chat')}>✨</button>
@@ -59,6 +61,7 @@ function Workspace() {
           {side === 'git' && <GitPanel onOpenDiff={setOpenPath} />}
           {side === 'mcp' && <SettingsPanel />}
           {side === 'skills' && <SkillsPanel />}
+          {side === 'history' && <TaskHistory />}
         </aside>
 
         <main className={`main ${panel === 'chat' ? 'with-chat' : ''}`}>

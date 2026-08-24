@@ -10,6 +10,7 @@ import { McpHost, type McpServerConfig } from '@localai/mcp';
 import { GitService } from '@localai/git';
 import { LanguageServerHost } from '@localai/lsp';
 import { runAgent, builtinTools, defaultSystemPrompt, type Tool } from '@localai/agent';
+import { startTask, recordMessage, finishTask, getTaskHistory, getTaskById } from './taskHistory.js';
 import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
 import { resolveWebDist } from './webdist.js';
@@ -351,6 +352,7 @@ export class EditorServer {
         const controller = new AbortController();
         this.runControllers.set(ws, controller);
         const requireApproval = !!params.requireApproval;
+        startTask(String(params.prompt), String(params.providerId), String(params.model));
         const gen = runAgent({
           runtime: {
             workspace: this.config.workspace,
@@ -372,19 +374,29 @@ export class EditorServer {
           signal: controller.signal,
           onEvent: (ev) => {
             ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'event', params: ev }));
+            // Record task history
+            const eventType = ev.type as string;
+            if (eventType === 'delta' && 'content' in ev) recordMessage('assistant', ev.content);
+            else if (eventType === 'tool_call' && 'toolCall' in ev) recordMessage('assistant', ev.toolCall.name, { toolName: ev.toolCall.name });
+            else if (eventType === 'tool_result' && 'result' in ev) recordMessage('tool', ev.result.content, { toolName: ev.result.content, success: ev.result.ok });
+            else if (eventType === 'done') recordMessage('assistant', '(task complete)');
+            else if (eventType === 'approval_request') recordMessage('assistant', `Approval request for ${(ev as any).tool}`, { toolName: (ev as any).tool });
           },
         });
         try {
           for await (const _ev of gen) {
             /* already forwarded via onEvent */
           }
+          finishTask('completed');
           this.sendResult(ws, id, { ok: true });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           if (controller.signal.aborted || /abort/i.test(msg)) {
+            finishTask('cancelled');
             ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'event', params: { type: 'done' } }));
             this.sendResult(ws, id, { ok: true, cancelled: true });
           } else {
+            finishTask('failed');
             throw e;
           }
         } finally {
@@ -405,6 +417,26 @@ export class EditorServer {
         this.pendingApprovals.get(ws)!.delete(approvalId);
         pending(!!params.approve);
         return this.sendResult(ws, id, { ok: true });
+      }
+      case 'agent.history': {
+        const history = getTaskHistory();
+        return this.sendResult(ws, id, { tasks: history.map((t) => ({
+          id: t.id,
+          timestamp: t.timestamp,
+          prompt: t.prompt,
+          provider: t.provider,
+          model: t.model,
+          status: t.status,
+          toolsCalled: t.toolsCalled,
+          filesChanged: t.filesChanged,
+          messageCount: t.messages.length,
+        })) });
+      }
+      case 'agent.getTask': {
+        const taskId = String(params.id ?? '');
+        const task = getTaskById(taskId);
+        if (!task) return this.sendResult(ws, id, { error: `Unknown task: ${taskId}` });
+        return this.sendResult(ws, id, { task });
       }
       case 'chat.send': {
         const provider = this.providerRegistry.get(String(params.providerId));
