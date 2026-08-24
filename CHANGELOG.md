@@ -28,7 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP Servers panel now has "Installed" and "Discover" tabs.
 
 ### Fixed
-- MCP server type definitions: added argsDescription field to registry entries.## [0.1.8] - 2026-08-22
+- MCP server type definitions: added argsDescription field to registry entries.## [0.2.0] - 2026-08-23
+
+### Added
+- **MCP Server Discovery** - browse and install known MCP servers
+- **Agent Task History** - record and display past agent runs
+- **Diff View** - view file changes with syntax highlighting
+- **Search Across Files** - find text across workspace with regex
+- **Settings Persistence** - save/load editor preferences
+- **Multi-tab Support** - tab management utilities
+- **Error Handling** - structured error types and retry logic
+- **Git Blame Annotations** - show who wrote each line
+- **Command Palette** - quick access to all editor commands
+- **Status Bar** - show workspace, provider, model, and state
+- **Keyboard Shortcuts** - reference for all editor commands
+- **File Change Tracking** - track agent modifications to files
+
+## [0.1.8] - 2026-08-22
+ - 2026-08-22
  - 2026-08-22
 
 ### Added
