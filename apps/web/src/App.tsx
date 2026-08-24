@@ -10,8 +10,9 @@ import { TaskHistory } from './TaskHistory';
 import { QuickOpen } from './QuickOpen';
 import { EditorPane } from './EditorPane';
 import { StatusBar } from './StatusBar';
+import { ChangesPanel } from './ChangesPanel';
 
-type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp' | 'history';
+type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp' | 'history' | 'changes';
 type Panel = 'editor' | 'chat';
 
 function Workspace() {
@@ -51,6 +52,7 @@ function Workspace() {
           <button title="MCP Servers" className={`icon-btn ${side === 'mcp' ? 'active' : ''}`} onClick={() => setSide('mcp')}>⚡</button>
           <button title="Agent Skills" className={`icon-btn ${side === 'skills' ? 'active' : ''}`} onClick={() => setSide('skills')}>🧠</button>
           <button title="Task History" className={`icon-btn ${side === 'history' ? 'active' : ''}`} onClick={() => setSide('history')}>📜</button>
+          <button title="File Changes" className={`icon-btn ${side === 'changes' ? 'active' : ''}`} onClick={() => setSide('changes')}>📝</button>
           <div className="spacer" />
           <button title="Quick Open (Ctrl+P)" className="icon-btn" onClick={() => setQuickOpen(true)}>⌘</button>
           <button title="Agent panel" className={`icon-btn ${panel === 'chat' ? 'active' : ''}`} onClick={() => setPanel(panel === 'chat' ? 'editor' : 'chat')}>✨</button>
@@ -63,6 +65,7 @@ function Workspace() {
           {side === 'mcp' && <SettingsPanel />}
           {side === 'skills' && <SkillsPanel />}
           {side === 'history' && <TaskHistory />}
+          {side === 'changes' && <ChangesPanel onOpen={setOpenPath} />}
         </aside>
 
         <main className={`main ${panel === 'chat' ? 'with-chat' : ''}`}>
