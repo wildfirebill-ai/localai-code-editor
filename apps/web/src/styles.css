@@ -186,3 +186,9 @@ select, input {
 .diff-add .diff-line-prefix { color: var(--green); }
 .diff-remove .diff-line-prefix { color: var(--red); }
 .diff-line-text { flex: 1; overflow-x: auto; }
+
+.status-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; background: var(--bg-panel); border-top: 1px solid var(--border); font-size: 12px; color: var(--fg-muted); }
+.status-left, .status-right { display: flex; align-items: center; gap: 12px; }
+.status-item { white-space: nowrap; }
+.status-item.running { color: var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }

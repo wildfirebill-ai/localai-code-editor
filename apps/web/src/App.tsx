@@ -9,6 +9,7 @@ import { SearchPanel } from './SearchPanel';
 import { TaskHistory } from './TaskHistory';
 import { QuickOpen } from './QuickOpen';
 import { EditorPane } from './EditorPane';
+import { StatusBar } from './StatusBar';
 
 type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp' | 'history';
 type Panel = 'editor' | 'chat';
@@ -78,6 +79,7 @@ function Workspace() {
           key={workspace}
         />
       )}
+      <StatusBar />
     </div>
   );
 }
