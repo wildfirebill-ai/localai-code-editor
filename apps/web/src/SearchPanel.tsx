@@ -1,97 +1,82 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from './state';
+import { searchFiles, type SearchResult } from './search';
 
-interface Hit {
-  path: string;
-  line: number;
-  text: string;
+interface SearchPanelProps {
+  onOpen: (path: string) => void;
 }
 
-/** Workspace-wide text search panel. */
-export function SearchPanel({ onOpen }: { onOpen: (path: string) => void }) {
-  const { client } = useApp();
+export function SearchPanel({ onOpen }: SearchPanelProps) {
+  const { client, workspace } = useApp();
   const [query, setQuery] = useState('');
-  const [hits, setHits] = useState<Hit[] | null>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
-  const [err, setErr] = useState('');
-  const seqRef = useRef(0);
-
-  const runSearch = async () => {
-    const q = query.trim();
-    if (!q) return;
-    const seq = ++seqRef.current;
-    setSearching(true);
-    setErr('');
-    try {
-      const res = await client.request<Hit[]>('fs.search', { query: q });
-      if (seq === seqRef.current) setHits(res);
-    } catch (e) {
-      if (seq === seqRef.current) setErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      if (seq === seqRef.current) setSearching(false);
-    }
-  };
-
-  // Group hits by file.
-  const grouped = new Map<string, Hit[]>();
-  for (const h of hits ?? []) {
-    const list = grouped.get(h.path) ?? [];
-    list.push(h);
-    grouped.set(h.path, list);
-  }
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    const input = document.getElementById('search-input') as HTMLInputElement | null;
-    input?.focus();
+    inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (query.trim()) {
+        setSearching(true);
+        searchFiles(client, workspace, { query })
+          .then(setResults)
+          .catch(() => setResults([]))
+          .finally(() => setSearching(false));
+      } else {
+        setResults([]);
+      }
+    }, 300);
+  }, [query, client, workspace]);
+
+  const highlightMatch = (content: string, idx: number, len: number) => {
+    if (idx < 0) return content;
+    return (
+      <>
+        {content.slice(0, idx)}
+        <span style={{ background: 'var(--yellow)', color: 'var(--bg)', padding: '0 2px', borderRadius: 2 }}>
+          {content.slice(idx, idx + len)}
+        </span>
+        {content.slice(idx + len)}
+      </>
+    );
+  };
+
   return (
-    <div className="settings-panel">
+    <div className="search-panel">
       <div className="panel-title">Search</div>
-      <div className="form" style={{ paddingBottom: 8 }}>
+      <div className="search-bar">
         <input
-          id="search-input"
-          placeholder="Search across all files…"
+          ref={inputRef}
+          type="text"
+          placeholder="Search across files..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && void runSearch()}
+          className="search-input"
         />
-        <button className="btn primary" onClick={() => void runSearch()} disabled={searching}>
-          {searching ? 'Searching…' : 'Search'}
-        </button>
+        {searching && <span className="spinner" />}
       </div>
-      {err && <p className="error" style={{ padding: '0 10px' }}>{err}</p>}
-      {hits !== null && !searching && (
-        <p className="muted" style={{ padding: '0 10px', margin: '0 0 6px' }}>
-          {hits.length} match{hits.length === 1 ? '' : 'es'} in {grouped.size} file{grouped.size === 1 ? '' : 's'}
-        </p>
-      )}
-      <ul className="changes" style={{ overflowY: 'auto' }}>
-        {[...grouped.entries()].map(([file, lines]) => (
-          <li key={file} style={{ marginBottom: 8 }}>
-            <div
-              className="change-path"
-              style={{ cursor: 'pointer', fontWeight: 600 }}
-              onClick={() => onOpen(file)}
-              title="Open file"
-            >
-              📄 {file}
+      <div className="search-results">
+        {results.length === 0 && query && !searching && (
+          <p className="muted" style={{ padding: '8px 10px' }}>No results found</p>
+        )}
+        {results.map((r, i) => (
+          <div
+            key={`${r.path}:${r.line}:${i}`}
+            className="search-result"
+            onClick={() => onOpen(r.path)}
+          >
+            <div className="search-result-path">{r.path}:{r.line}</div>
+            <div className="search-result-content">
+              {highlightMatch(r.content, r.matchStart, r.matchEnd - r.matchStart)}
             </div>
-            <ul style={{ listStyle: 'none', margin: '2px 0 0', padding: 0 }}>
-              {lines.map((h, i) => (
-                <li
-                  key={i}
-                  onClick={() => onOpen(h.path)}
-                  style={{ cursor: 'pointer', padding: '1px 0 1px 14px', fontFamily: 'monospace', fontSize: 11 }}
-                  title={`Line ${h.line} — click to open`}
-                >
-                  <span className="muted">{h.line}</span> {h.text}
-                </li>
-              ))}
-            </ul>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
