@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode, useRef } from 'react';
 import { RpcClient } from './rpc';
 import { calculateCost } from './cost';
+import { loadSettings, saveSettings, type EditorSettings } from './settings';
 import type { AgentEvent, ChatEntry, PendingApproval, ModelInfo, ProviderInfo, ProviderHealth, RepoStatus, McpServerStatus, McpTool, LspStatus } from './types';
 
 interface AppState {
@@ -24,6 +25,8 @@ interface AppState {
   resolveApproval: (id: string, approve: boolean) => Promise<void>;
   /** Bumped after every agent run so the editor can reload agent-modified files. */
   editorReloadKey: number;
+  settings: EditorSettings;
+  updateSettings: <K extends keyof EditorSettings>(key: K, value: EditorSettings[K]) => void;
   setActiveProvider: (id: string) => void;
   setActiveModel: (id: string) => void;
   setWorkspace: (path: string) => Promise<void>;
@@ -114,6 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [running, setRunning] = useState(false);
   const [editorReloadKey, setEditorReloadKey] = useState(0);
+  const [settings, setSettingsState] = useState(() => loadSettings());
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [lastUsage, setLastUsage] = useState<{ promptTokens?: number; completionTokens?: number } | null>(null);
   const [lastCost, setLastCost] = useState<number | null>(null);
@@ -286,6 +290,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     approvals,
     resolveApproval,
     editorReloadKey,
+    settings,
+    updateSettings: (key, val) => {
+      setSettingsState((prev) => {
+        const next = { ...prev, [key]: val };
+        saveSettings(next);
+        return next;
+      });
+    },
     setActiveProvider: onProviderChange,
     setActiveModel,
     setWorkspace,
