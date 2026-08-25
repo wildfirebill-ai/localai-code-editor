@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-08-25
+
+### Added
+- **Agent Skills Marketplace** — Installed/Discover tabs with 18 curated skills across 12 categories, one-click install/uninstall, category filter and search
+- **Docker-in-Docker Sandbox** — isolated Docker container for safe agent code execution with start/stop/exec controls, network-isolated by default
+- **Agent System Prompt Tuning UI** — preset templates (Code Assistant, Security Reviewer, DevOps Helper, Refactor Expert), character count, expanded editor
+- **Skill Auto-Application** — workspace-aware skill suggestions based on project indicators (package.json, Dockerfile, etc.) and path heuristics
+- **Enhanced MCP Tool Discovery** — searchable tool list grouped by server with expandable sections and description previews
+- **Skill categories** — all builtin skills now include category metadata in frontmatter
+
+### Changed
+- Skills panel now has Installed/Discover tabs matching MCP Discover UX pattern
+- Agent instructions editor expanded with preset templates and char count
+- MCP Connected Tools section replaced with searchable, grouped tool browser
+- CI workflow: upgraded `actions/checkout` to v5, added explicit permissions to desktop job
+
 ## [0.2.0] - 2026-08-23
 
 ### Added

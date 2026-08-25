@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp, getRecentWorkspaces } from './state';
 import { McpDiscover } from './McpDiscover';
-import type { ProviderInfo } from './types';
+import type { ProviderInfo, SandboxStatus } from './types';
 
 type McpForm = {
   name: string;
@@ -47,6 +47,10 @@ export function SettingsPanel() {
   const [provEditing, setProvEditing] = useState<string | null>(null);
   const [provErr, setProvErr] = useState('');
   const [provMsg, setProvMsg] = useState('');
+  const [sandbox, setSandbox] = useState<SandboxStatus>({ available: false, running: false });
+  const [sandboxImage, setSandboxImage] = useState('node:22-alpine');
+  const [sandboxOutput, setSandboxOutput] = useState('');
+  const [sandboxCmd, setSandboxCmd] = useState('');
 
   const connect = async () => {
     setErr('');
@@ -175,6 +179,52 @@ export function SettingsPanel() {
     }
   };
 
+  // ---- Sandbox ----
+
+  const refreshSandbox = async () => {
+    try {
+      const s = await client.request<SandboxStatus>('sandbox.status');
+      setSandbox(s);
+    } catch { /* ignore */ }
+  };
+
+  const startSandbox = async () => {
+    try {
+      setSandboxOutput('Starting sandbox…');
+      const r = await client.request<{ ok: boolean; containerId?: string; error?: string }>('sandbox.start', { image: sandboxImage });
+      if (r.ok) {
+        setSandboxOutput(`Sandbox started: ${r.containerId?.slice(0, 12)}`);
+        await refreshSandbox();
+      } else {
+        setSandboxOutput(`Error: ${r.error}`);
+      }
+    } catch (e) {
+      setSandboxOutput(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  const stopSandbox = async () => {
+    try {
+      await client.request('sandbox.stop');
+      setSandboxOutput('Sandbox stopped.');
+      await refreshSandbox();
+    } catch (e) {
+      setSandboxOutput(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  const execSandbox = async () => {
+    if (!sandboxCmd.trim()) return;
+    try {
+      const r = await client.request<{ ok: boolean; stdout: string; stderr: string; exitCode: number }>('sandbox.exec', { command: sandboxCmd });
+      setSandboxOutput(r.ok ? r.stdout || '(no output)' : `Exit ${r.exitCode}: ${r.stderr || r.stdout}`);
+    } catch (e) {
+      setSandboxOutput(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  useEffect(() => { void refreshSandbox(); }, [client]);
+
   // ---- Workspace ----
 
   const pickFolder = async () => {
@@ -275,14 +325,32 @@ export function SettingsPanel() {
 
       <div className="panel-title">Agent Instructions (.localai/system.md)</div>
       <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
-        Appended to every agent run in this workspace — conventions, guardrails, style rules.
+        Appended to every agent run — conventions, guardrails, style rules.
       </p>
+      <div style={{ padding: '0 10px 6px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        <span className="muted" style={{ fontSize: 11, lineHeight: '22px' }}>Presets:</span>
+        {[
+          { label: 'Code Assistant', prompt: 'You are a helpful coding assistant.\n- Write clean, typed code\n- Prefer functional patterns\n- Add error handling\n- Write tests for new logic' },
+          { label: 'Security Reviewer', prompt: 'You are a security-focused code reviewer.\n- Check for injection vulnerabilities\n- Verify auth/authz on all endpoints\n- Flag hardcoded secrets\n- Suggest OWASP-compliant fixes' },
+          { label: 'DevOps Helper', prompt: 'You are a DevOps engineer assistant.\n- Write reproducible Dockerfiles\n- Use multi-stage builds\n- Follow 12-factor app principles\n- Prefer docker-compose for local dev' },
+          { label: 'Refactor Expert', prompt: 'You are a refactoring specialist.\n- Extract small, focused functions\n- Remove dead code\n- Simplify conditionals\n- Improve naming for clarity' },
+        ].map((preset) => (
+          <button
+            key={preset.label}
+            className="btn tiny"
+            onClick={() => { setSysPrompt(preset.prompt); setSysSaved(false); }}
+            title={preset.prompt}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
       <textarea
         className="system-prompt-editor"
         placeholder={"e.g. Always use TypeScript strict mode.\nNever touch files under vendor/.\nPrefer pnpm over npm."}
         value={sysPrompt ?? ''}
         onChange={(e) => { setSysPrompt(e.target.value); setSysSaved(false); }}
-        rows={6}
+        rows={8}
         style={{ width: 'calc(100% - 20px)', margin: '0 10px 6px', fontFamily: 'monospace', fontSize: 12 }}
       />
       <div style={{ padding: '0 10px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -297,14 +365,15 @@ export function SettingsPanel() {
               }
               setSysSaved(true);
               setTimeout(() => setSysSaved(false), 2000);
-            } catch (e) {
+            } catch {
               setSysSaved(false);
             }
           }}
         >
           Save instructions
         </button>
-        {sysSaved && <span className="muted" style={{ fontSize: 11 }}>✓ saved — applies to next agent run</span>}
+        {sysSaved && <span className="muted" style={{ fontSize: 11 }}>&#10003; saved &mdash; applies to next agent run</span>}
+        <span className="muted" style={{ fontSize: 11, marginLeft: 'auto' }}>{(sysPrompt ?? '').length} chars</span>
       </div>
 
       <div className="panel-title">LLM Providers</div>
@@ -379,6 +448,48 @@ export function SettingsPanel() {
         </div>
       )}
 
+      <div className="panel-title">Sandbox (Docker-in-Docker)</div>
+      <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
+        Run agent commands in an isolated Docker container — no host filesystem access.
+      </p>
+      <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className={`dot ${sandbox.available ? (sandbox.running ? 'ok' : '') : 'bad'}`} />
+          <span className="muted" style={{ fontSize: 12 }}>
+            {!sandbox.available ? 'Docker not available' : sandbox.running ? `Running (${sandbox.containerId?.slice(0, 12) ?? ''})` : 'Stopped'}
+          </span>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="muted" style={{ fontSize: 11 }}>Image:</span>
+          <input value={sandboxImage} onChange={(e) => setSandboxImage(e.target.value)} style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }} placeholder="node:22-alpine" />
+        </label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {sandbox.running ? (
+            <button className="btn tiny" onClick={stopSandbox}>Stop</button>
+          ) : (
+            <button className="btn primary" onClick={startSandbox} disabled={!sandbox.available}>Start</button>
+          )}
+          <button className="btn tiny" onClick={refreshSandbox}>Refresh</button>
+        </div>
+        {sandbox.running && (
+          <>
+            <input
+              placeholder="Run command in sandbox…"
+              value={sandboxCmd}
+              onChange={(e) => setSandboxCmd(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void execSandbox()}
+              style={{ fontFamily: 'monospace', fontSize: 12 }}
+            />
+            <button className="btn tiny" onClick={execSandbox}>Run</button>
+          </>
+        )}
+        {sandboxOutput && (
+          <pre style={{ margin: 0, padding: 8, background: 'var(--bg-editor)', borderRadius: 4, fontSize: 11, maxHeight: 120, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+            {sandboxOutput}
+          </pre>
+        )}
+      </div>
+
       <div className="panel-title">MCP Servers</div>
       <McpDiscover
         mcpStatus={mcpStatus}
@@ -386,14 +497,8 @@ export function SettingsPanel() {
         refresh={refresh}
       />
 
-      <div className="panel-title">Connected Tools</div>
-      <ul className="tools">
-        {mcpTools.map((t) => (
-          <li key={t.name} title={t.description ?? ''}>
-            <code>{t.name}</code>
-          </li>
-        ))}
-      </ul>
+      <div className="panel-title">Connected Tools ({mcpTools.length})</div>
+      <McpToolDiscovery tools={mcpTools} />
 
       <div className="panel-title">Add Server</div>
       <div className="form">
@@ -487,4 +592,76 @@ function parseEnv(text: string): Record<string, string> | undefined {
     }
   }
   return any ? env : undefined;
+}
+
+function McpToolDiscovery({ tools }: { tools: import('./types').McpTool[] }) {
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  // Group tools by server
+  const grouped = tools.reduce<Record<string, import('./types').McpTool[]>>((acc, t) => {
+    (acc[t.server] ??= []).push(t);
+    return acc;
+  }, {});
+
+  const filtered = tools.filter((t) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      t.name.toLowerCase().includes(q) ||
+      (t.description ?? '').toLowerCase().includes(q) ||
+      t.server.toLowerCase().includes(q)
+    );
+  });
+
+  if (tools.length === 0) {
+    return <p className="muted" style={{ padding: '0 10px', fontSize: 11 }}>No tools connected. Add an MCP server above.</p>;
+  }
+
+  return (
+    <div style={{ padding: '0 10px 10px' }}>
+      <input
+        placeholder="Search tools…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', marginBottom: 6, fontFamily: 'monospace', fontSize: 11 }}
+      />
+      {search ? (
+        <ul className="tools" style={{ maxHeight: 200, overflowY: 'auto' }}>
+          {filtered.map((t) => (
+            <li key={`${t.server}:${t.name}`} title={t.description ?? ''} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <code>{t.name}</code>
+              <span className="muted" style={{ fontSize: 10 }}>{t.server}</span>
+              {t.description && <span className="muted" style={{ fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{t.description}</span>}
+            </li>
+          ))}
+          {filtered.length === 0 && <li className="muted" style={{ listStyle: 'none' }}>No tools match "{search}"</li>}
+        </ul>
+      ) : (
+        Object.entries(grouped).map(([server, serverTools]) => (
+          <div key={server} style={{ marginBottom: 6 }}>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '2px 0' }}
+              onClick={() => setExpanded((e) => ({ ...e, [server]: !e[server] }))}
+            >
+              <span className="muted" style={{ fontSize: 11, fontWeight: 600 }}>
+                {expanded[server] ? '▼' : '▶'} {server}
+              </span>
+              <span className="muted" style={{ fontSize: 10 }}>({serverTools.length})</span>
+            </div>
+            {expanded[server] && (
+              <ul className="tools" style={{ marginLeft: 12, maxHeight: 150, overflowY: 'auto' }}>
+                {serverTools.map((t) => (
+                  <li key={t.name} title={t.description ?? ''} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <code>{t.name}</code>
+                    {t.description && <span className="muted" style={{ fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 250 }}>{t.description}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
 }

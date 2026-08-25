@@ -33,11 +33,16 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Code Formatting / Auto-save** | Format code with language-specific rules; auto-save with configurable delay. | Medium | ✅ Done (v0.2.0) |
 | **Terminal Integration** | Run commands in an integrated terminal over WebSocket. | Medium | ✅ Done (v0.2.0) |
 | **Git Blame Annotations** | Show who wrote each line and when. | Low | ✅ Done (v0.2.0) |
-| **Agent Skills Marketplace** | Built-in browser to discover, install, and share skills from a community registry | High | ⬜ Planned |
-| **Docker-in-Docker Sandbox** | Safe, isolated environment for agent to run/test code without host access | High | ⬜ Planned |
-| **Agent System Prompt Tuning UI** | Visual editor to customize the agent's system prompt, tool descriptions, and behavior | Medium | ⬜ Planned |
-| **Skill Auto-Application** | Auto-suggest and apply relevant skills based on file type, project type, or task | Medium | ⬜ Planned |
-| **Enhanced MCP Tool Discovery** | Better UI for browsing available tools from connected MCP servers | Medium | ⬜ Planned |
+
+### v0.2.1 — Marketplace & Sandbox ✅ (Released 2026-08-25)
+
+| Feature | Description | Priority | Status |
+|---------|-------------|----------|--------|
+| **Agent Skills Marketplace** | Installed/Discover tabs, 18 curated skills, one-click install/uninstall, category filter + search. | High | ✅ Done (v0.2.1) |
+| **Docker-in-Docker Sandbox** | Isolated Docker container for agent code execution — start/stop/exec via Settings, network-isolated. | High | ✅ Done (v0.2.1) |
+| **Agent System Prompt Tuning UI** | Preset templates (Code Assistant, Security Reviewer, DevOps, Refactor), character count, expanded editor. | Medium | ✅ Done (v0.2.1) |
+| **Skill Auto-Application** | Workspace-aware skill suggestions based on project indicators and path heuristics. | Medium | ✅ Done (v0.2.1) |
+| **Enhanced MCP Tool Discovery** | Searchable tool list, grouped by server with expandable sections, description previews. | Medium | ✅ Done (v0.2.1) |
 
 ### v0.3.0 — Editor Polish 🎨 (Q1 2027)
 

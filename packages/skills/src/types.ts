@@ -5,6 +5,7 @@ export type SkillSource = 'builtin' | 'user' | 'project';
 export interface SkillFrontmatter {
   name?: string;
   description?: string;
+  category?: string;
   /** Any other frontmatter fields, kept verbatim. */
   [key: string]: unknown;
 }
@@ -14,6 +15,7 @@ export interface Skill {
   /** Unique id (derived from frontmatter name or directory). */
   name: string;
   description: string;
+  category: string;
   /** Full markdown body (the skill's instructions/content). */
   content: string;
   /** Which directory this came from. */
@@ -27,6 +29,7 @@ export interface Skill {
 export interface SkillSummary {
   name: string;
   description: string;
+  category: string;
   source: SkillSource;
   path: string;
   enabled: boolean;

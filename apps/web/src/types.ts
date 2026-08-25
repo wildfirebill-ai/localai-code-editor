@@ -110,6 +110,7 @@ export interface ChatEntry {
 export interface SkillSummary {
   name: string;
   description: string;
+  category: string;
   source: 'builtin' | 'project' | 'user';
   path: string;
   enabled: boolean;
@@ -122,5 +123,13 @@ export interface LspStatus {
   extensions: string[];
   running: boolean;
   pid?: number;
+  error?: string;
+}
+
+export interface SandboxStatus {
+  available: boolean;
+  running: boolean;
+  containerId?: string;
+  image?: string;
   error?: string;
 }

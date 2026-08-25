@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { stat } from 'node:fs/promises';
+import { stat, mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, extname, join, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -491,6 +491,44 @@ export class EditorServer {
         if (!ok) throw new Error(`Unknown skill: ${params.name}`);
         return this.sendResult(ws, id, { ok: true });
       }
+      case 'skills.install': {
+        const skillName = String(params.name ?? '').trim();
+        const skillContent = String(params.content ?? '');
+        const skillCategory = String(params.category ?? 'other');
+        const skillDescription = String(params.description ?? '');
+        if (!skillName || !skillContent) throw new Error('name and content are required');
+        const skillsDir = join(this.config.workspace, '.localai', 'skills', skillName);
+        await mkdir(skillsDir, { recursive: true });
+        const frontmatter = [
+          '---',
+          `name: ${skillName}`,
+          `description: ${skillDescription}`,
+          `category: ${skillCategory}`,
+          '---',
+          '',
+        ].join('\n');
+        await writeFile(join(skillsDir, 'SKILL.md'), frontmatter + skillContent, 'utf-8');
+        await this.skills.load({
+          projectDir: this.config.workspace,
+          userDir: defaultUserSkillsDir(homedir()),
+          builtinDir: builtinSkillsDir(),
+        });
+        return this.sendResult(ws, id, { ok: true });
+      }
+      case 'skills.uninstall': {
+        const rmName = String(params.name ?? '').trim();
+        if (!rmName) throw new Error('name is required');
+        const { unlinkSync } = await import('node:fs');
+        const skillDir = join(this.config.workspace, '.localai', 'skills', rmName);
+        try { unlinkSync(join(skillDir, 'SKILL.md')); } catch { /* ignore */ }
+        try { (await import('node:fs')).rmdirSync(skillDir); } catch { /* ignore */ }
+        await this.skills.load({
+          projectDir: this.config.workspace,
+          userDir: defaultUserSkillsDir(homedir()),
+          builtinDir: builtinSkillsDir(),
+        });
+        return this.sendResult(ws, id, { ok: true });
+      }
 
       // ---- Language servers ----
       case 'lsp.status': return this.sendResult(ws, id, this.lsp.status());
@@ -537,6 +575,24 @@ export class EditorServer {
       case 'mcp.status': return this.sendResult(ws, id, this.mcpHost.status());
       case 'mcp.listTools': return this.sendResult(ws, id, this.mcpHost.listTools());
       case 'mcp.callTool': return this.sendResult(ws, id, await this.mcpHost.callTool(String(params.name), (params.args ?? {}) as Record<string, unknown>));
+
+      // ---- Sandbox ----
+      case 'sandbox.status': {
+        const result = await this.getSandboxStatus();
+        return this.sendResult(ws, id, result);
+      }
+      case 'sandbox.start': {
+        const result = await this.startSandbox(String(params.image ?? 'node:22-alpine'));
+        return this.sendResult(ws, id, result);
+      }
+      case 'sandbox.stop': {
+        const result = await this.stopSandbox();
+        return this.sendResult(ws, id, result);
+      }
+      case 'sandbox.exec': {
+        const result = await this.execInSandbox(String(params.command ?? ''));
+        return this.sendResult(ws, id, result);
+      }
 
       // ---- Filesystem (for the editor tree + agent file tools) ----
       case 'fs.list': return this.sendResult(ws, id, await this.fs.listFiles(String(params.path ?? '')));
@@ -622,7 +678,79 @@ export class EditorServer {
     return { ok: true, workspace: target };
   }
 
+  private sandboxContainerId: string | null = null;
+
+  private async getSandboxStatus(): Promise<{ available: boolean; running: boolean; containerId?: string; image?: string; error?: string }> {
+    try {
+      const { execSync } = await import('node:child_process');
+      execSync('docker info', { stdio: 'ignore', timeout: 5000 });
+    } catch {
+      return { available: false, running: false, error: 'Docker is not available' };
+    }
+    if (this.sandboxContainerId) {
+      try {
+        const { execSync } = await import('node:child_process');
+        const out = execSync(`docker inspect --format '{{.State.Running}}' ${this.sandboxContainerId}`, { encoding: 'utf-8', timeout: 5000 }).trim();
+        if (out === 'true') {
+          return { available: true, running: true, containerId: this.sandboxContainerId };
+        }
+      } catch { /* container gone */ }
+      this.sandboxContainerId = null;
+    }
+    return { available: true, running: false };
+  }
+
+  private async startSandbox(image: string): Promise<{ ok: boolean; containerId?: string; error?: string }> {
+    try {
+      const { execSync } = await import('node:child_process');
+      execSync('docker info', { stdio: 'ignore', timeout: 5000 });
+    } catch {
+      return { ok: false, error: 'Docker is not available' };
+    }
+    try {
+      const { execSync } = await import('node:child_process');
+      const id = execSync(
+        `docker run -d --rm --name localai-sandbox-${Date.now()} --network none ${image} sleep infinity`,
+        { encoding: 'utf-8', timeout: 30000 },
+      ).trim();
+      this.sandboxContainerId = id;
+      return { ok: true, containerId: id };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  private async stopSandbox(): Promise<{ ok: boolean; error?: string }> {
+    if (!this.sandboxContainerId) return { ok: true };
+    try {
+      const { execSync } = await import('node:child_process');
+      execSync(`docker stop ${this.sandboxContainerId}`, { timeout: 10000 });
+      this.sandboxContainerId = null;
+      return { ok: true };
+    } catch (e) {
+      this.sandboxContainerId = null;
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  private async execInSandbox(command: string): Promise<{ ok: boolean; stdout: string; stderr: string; exitCode: number }> {
+    if (!this.sandboxContainerId) return { ok: false, stdout: '', stderr: 'Sandbox is not running', exitCode: 1 };
+    try {
+      const { execSync } = await import('node:child_process');
+      const stdout = execSync(`docker exec ${this.sandboxContainerId} sh -c ${JSON.stringify(command)}`, {
+        encoding: 'utf-8',
+        timeout: 60000,
+      });
+      return { ok: true, stdout, stderr: '', exitCode: 0 };
+    } catch (e: any) {
+      return { ok: false, stdout: e.stdout ?? '', stderr: e.stderr ?? e.message, exitCode: e.status ?? 1 };
+    }
+  }
+
   async stop(): Promise<void> {
+    if (this.sandboxContainerId) {
+      try { await this.stopSandbox(); } catch { /* ignore */ }
+    }
     await this.mcpHost.disconnectAll();
     await this.lsp.stopAll();
     this.wss.close();
