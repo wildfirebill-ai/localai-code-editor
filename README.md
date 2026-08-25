@@ -22,8 +22,6 @@
 
 > **A free, open-source, self-hosted AI code editor powered entirely by your local LLM — no cloud, no API keys, no telemetry.**
 
-![LocalAI Code Editor Screenshot](docs/images/screenshot-editor.png)
-
 **What is LocalAI Code Editor?** LocalAI Code Editor is a free, open-source, self-hosted AI code editor that runs entirely on your local machine. It connects to local LLMs — Ollama, LM Studio, llama.cpp, vLLM, or any OpenAI-compatible server — to provide an agentic AI coding assistant without sending your code to the cloud. Think VS Code + AI, but private.
 
 **Key features:** Monaco Editor (same as VS Code), agentic AI that reads/writes files and runs commands, MCP protocol support for external tools, a marketplace of 50+ agent skills, Docker-in-Docker sandboxing, LSP IntelliSense, full git panel with blame, and builds for Windows, macOS, Linux, Docker, and Unraid.
