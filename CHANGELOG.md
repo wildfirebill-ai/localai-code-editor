@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-08-25
+
+### Added
+- **Custom System Prompt Variables** — template variables in system prompt: `{{workspace}}`, `{{git_branch}}`, `{{date}}`, `{{time}}`, `{{weekday}}`
+- **Agent Conversation Export** — export chat history as Markdown or JSON with download button in the Agent panel
+- **Tool Description Customization** — edit MCP tool descriptions per workspace in Settings; overrides what the agent sees
+- **Agent Token Usage Dashboard** — visual input/output bar with cost estimate, locale-formatted token counts
+
+### Changed
+- Settings panel shows variable reference hints in the Agent Instructions section
+- Connected Tools section now includes editable tool descriptions below the grouped list
+
 ## [0.2.1] - 2026-08-25
 
 ### Added

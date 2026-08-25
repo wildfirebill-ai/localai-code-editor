@@ -33,6 +33,7 @@ const EMPTY_PROV: ProvForm = { id: '', label: '', baseUrl: '', apiKey: '' };
 
 export function SettingsPanel() {
   const { client, workspace, setWorkspace, providers, providerHealth, mcpStatus, mcpTools, lspStatus, refresh, settings, updateSettings } = useApp();
+
   const [form, setForm] = useState<McpForm>(EMPTY_MCP);
   const [err, setErr] = useState('');
   const [sysPrompt, setSysPrompt] = useState<string | null>(null);
@@ -326,6 +327,7 @@ export function SettingsPanel() {
       <div className="panel-title">Agent Instructions (.localai/system.md)</div>
       <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
         Appended to every agent run — conventions, guardrails, style rules.
+        <br />Variables: <code>{'{{workspace}}'}</code> <code>{'{{git_branch}}'}</code> <code>{'{{date}}'}</code> <code>{'{{time}}'}</code> <code>{'{{weekday}}'}</code>
       </p>
       <div style={{ padding: '0 10px 6px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         <span className="muted" style={{ fontSize: 11, lineHeight: '22px' }}>Presets:</span>
@@ -499,6 +501,7 @@ export function SettingsPanel() {
 
       <div className="panel-title">Connected Tools ({mcpTools.length})</div>
       <McpToolDiscovery tools={mcpTools} />
+      <ToolDescriptions tools={mcpTools} client={client} workspace={workspace} />
 
       <div className="panel-title">Add Server</div>
       <div className="form">
@@ -592,6 +595,64 @@ function parseEnv(text: string): Record<string, string> | undefined {
     }
   }
   return any ? env : undefined;
+}
+
+function ToolDescriptions({ tools, client, workspace }: { tools: import('./types').McpTool[]; client: { request: <T>(m: string, p?: Record<string, unknown>) => Promise<T> }; workspace: string }) {
+  const [descs, setDescs] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    client
+      .request<{ exists: boolean }>('fs.stat', { path: '.localai/tool-descriptions.json' })
+      .then(async (s) => {
+        if (cancelled) return;
+        if (!s.exists) return setDescs({});
+        const content = await client.request<string>('fs.read', { path: '.localai/tool-descriptions.json' });
+        if (!cancelled) try { setDescs(JSON.parse(content)); } catch { setDescs({}); }
+      })
+      .catch(() => !cancelled && setDescs({}));
+    return () => { cancelled = true; };
+  }, [client, workspace]);
+
+  if (tools.length === 0) return null;
+
+  const save = async () => {
+    try {
+      const filtered = Object.fromEntries(Object.entries(descs).filter(([, v]) => v.trim()));
+      if (Object.keys(filtered).length === 0) {
+        await client.request('fs.delete', { path: '.localai/tool-descriptions.json' }).catch(() => {});
+      } else {
+        await client.request('fs.write', { path: '.localai/tool-descriptions.json', content: JSON.stringify(filtered, null, 2) });
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div style={{ padding: '0 10px 10px' }}>
+      <p className="muted" style={{ fontSize: 11, margin: '0 0 6px' }}>
+        Custom tool descriptions override what the agent sees. Leave blank to use the tool's default.
+      </p>
+      {tools.slice(0, 15).map((t) => (
+        <div key={t.name} style={{ marginBottom: 4 }}>
+          <label className="muted" style={{ fontSize: 11 }}>{t.name}</label>
+          <input
+            value={descs[t.name] ?? ''}
+            placeholder={t.description ?? 'No description'}
+            onChange={(e) => setDescs((d) => ({ ...d, [t.name]: e.target.value }))}
+            style={{ width: '100%', fontSize: 11, fontFamily: 'monospace' }}
+          />
+        </div>
+      ))}
+      {tools.length > 15 && <p className="muted" style={{ fontSize: 10 }}>…and {tools.length - 15} more</p>}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}>
+        <button className="btn tiny primary" onClick={save}>Save descriptions</button>
+        {saved && <span className="muted" style={{ fontSize: 11 }}>&#10003; saved</span>}
+      </div>
+    </div>
+  );
 }
 
 function McpToolDiscovery({ tools }: { tools: import('./types').McpTool[] }) {

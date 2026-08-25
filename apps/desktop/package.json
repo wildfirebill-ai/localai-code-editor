@@ -1,6 +1,6 @@
 {
   "name": "@localai/desktop",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Multi-platform local-LLM code editor with MCP, agentic tools, and a full git panel",
   "homepage": "https://github.com/wildfirebill-ai/localai-code-editor",

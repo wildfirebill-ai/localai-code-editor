@@ -44,14 +44,14 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Skill Auto-Application** | Workspace-aware skill suggestions based on project indicators and path heuristics. | Medium | ✅ Done (v0.2.1) |
 | **Enhanced MCP Tool Discovery** | Searchable tool list, grouped by server with expandable sections, description previews. | Medium | ✅ Done (v0.2.1) |
 
-### v0.2.2 — Agent Improvements
+### v0.2.2 — Agent Improvements ✅ (Released 2026-08-25)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
-| **Custom System Prompt Variables** | Template variables in system prompt (workspace path, file type, git branch). | Medium | 📋 Planned |
-| **Agent Conversation Export** | Export chat history as Markdown or JSON for sharing/debugging. | Medium | 📋 Planned |
-| **Tool Description Customization** | Edit MCP tool descriptions shown to the agent in system prompt. | Low | 📋 Planned |
-| **Agent Token Usage Dashboard** | Visual breakdown of prompt/completion tokens per run with cost estimates. | Medium | 📋 Planned |
+| **Custom System Prompt Variables** | Template variables in system prompt: `{{workspace}}`, `{{git_branch}}`, `{{date}}`, `{{time}}`, `{{weekday}}`. | Medium | ✅ Done (v0.2.2) |
+| **Agent Conversation Export** | Export chat history as Markdown or JSON with download button. | Medium | ✅ Done (v0.2.2) |
+| **Tool Description Customization** | Edit MCP tool descriptions in Settings; saved per workspace. | Low | ✅ Done (v0.2.2) |
+| **Agent Token Usage Dashboard** | Visual breakdown with input/output bar, cost estimate, and locale-formatted counts. | Medium | ✅ Done (v0.2.2) |
 
 ### v0.2.3 — Git Enhancements
 

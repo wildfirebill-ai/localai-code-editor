@@ -211,6 +211,29 @@ export class EditorServer {
     ].join('\n');
   }
 
+  /** Substitute template variables in the user's system prompt. */
+  private async substituteVariables(text: string): Promise<string> {
+    const now = new Date();
+    const vars: Record<string, string> = {
+      '{{workspace}}': this.config.workspace,
+      '{{date}}': now.toISOString().slice(0, 10),
+      '{{time}}': now.toTimeString().slice(0, 8),
+      '{{weekday}}': ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()],
+    };
+    // Git branch — best-effort
+    try {
+      const { execSync } = await import('node:child_process');
+      vars['{{git_branch}}'] = execSync('git rev-parse --abbrev-ref HEAD', { cwd: this.config.workspace, encoding: 'utf-8', timeout: 3000 }).trim() || 'detached';
+    } catch {
+      vars['{{git_branch}}'] = 'unknown';
+    }
+    let result = text;
+    for (const [key, val] of Object.entries(vars)) {
+      result = result.replaceAll(key, val);
+    }
+    return result;
+  }
+
   async start(): Promise<void> {
     await Promise.all(
       Object.entries(this.config.mcpServers).map(([name, cfg]) =>
@@ -638,7 +661,7 @@ export class EditorServer {
   private async withWorkspacePrompt(prompt: string): Promise<string> {
     try {
       const extra = await readFile(resolve(this.config.workspace, '.localai', 'system.md'), 'utf-8');
-      const trimmed = extra.trim();
+      const trimmed = await this.substituteVariables(extra.trim());
       if (!trimmed) return prompt;
       return `${prompt}\n\n# Workspace instructions\n\n${trimmed}`;
     } catch {

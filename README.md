@@ -80,13 +80,15 @@
 |----------|--------------|
 | **Agent Task History** | View, replay, and branch from previous agent task trajectories |
 | **Model Comparison** | Run the same prompt against multiple models side-by-side |
-| **Agent System Prompt Tuning** | Preset templates (Code Assistant, Security Reviewer, DevOps, Refactor), character count, expanded editor |
+| **Agent System Prompt Tuning** | Preset templates, character count, expanded editor, template variables (`{{workspace}}`, `{{git_branch}}`, etc.) |
 | **Approve-before-Apply** | Approve/deny per write+command via Agent panel toggle (diff-level review) |
 | **Docker-in-Docker Sandbox** | Isolated Docker container for safe agent code execution — start/stop/exec via Settings |
 | **Provider Setup UI** | Add, edit, test, and remove providers at runtime (Settings panel) — persisted per workspace |
 | **Workspace Management** | Native folder picker on launch; switch projects anytime; live-rebinds git/skills/LSP |
 | **MCP Server Discovery** | Curated registry of 15+ servers with search, category filter, and one-click install |
 | **MCP Tool Discovery** | Searchable tool list grouped by server with expandable sections and descriptions |
+| **Token Usage Dashboard** | Visual input/output breakdown, cost estimates, locale-formatted token counts |
+| **Conversation Export** | Export chat history as Markdown or JSON for sharing and debugging |
 | **Skill Auto-Application** | Workspace-aware skill suggestions based on project indicators and path heuristics |
 | **Terminal Integration** | Run commands in an integrated terminal over WebSocket |
 | **Code Formatting** | Format code with language-specific rules; auto-save with configurable delay |
@@ -447,6 +449,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.2.2](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.2) | 2026-08-25 | Prompt Variables, Chat Export, Tool Description Customization, Token Usage Dashboard |
 | [v0.2.1](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.1) | 2026-08-25 | Skills Marketplace, Docker-in-Docker Sandbox, Prompt Tuning UI, Skill Suggestions, Enhanced Tool Discovery |
 | [v0.2.0](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.0) | 2026-08-23 | MCP Discovery, Task History, Model Comparison, Terminal, Git Blame, Code Formatting, Settings UI |
 | [v0.1.6](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.6) | 2026-08-22 | Electron 43 (clears flagged CVEs), Docker slimmed + hardened, automated vuln scanning |

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from './state';
 import { calculateCost } from './cost';
+
 import { getAllFiles, fuzzyFilter } from './files';
 
 interface MentionState {
@@ -105,6 +106,34 @@ const {
     if (lastUsage) setLastCost(calculateCost(lastUsage.promptTokens ?? 0, lastUsage.completionTokens ?? 0, activeModel));
   };
 
+  // ---- Export ----
+
+  const exportChat = (format: 'markdown' | 'json') => {
+    if (chat.length === 0) return;
+    let content: string;
+    let filename: string;
+    let mime: string;
+
+    if (format === 'json') {
+      content = JSON.stringify({ workspace, model: activeModel, entries: chat, usage: lastUsage }, null, 2);
+      filename = `chat-export-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+      mime = 'application/json';
+    } else {
+      const lines = chat.map((c) => `**${c.role}:**\n${c.content}`);
+      content = `# Agent Conversation\n\nWorkspace: ${workspace}\nModel: ${activeModel}\nDate: ${new Date().toISOString().slice(0, 19)}\n\n---\n\n${lines.join('\n\n---\n\n')}`;
+      filename = `chat-export-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.md`;
+      mime = 'text/markdown';
+    }
+
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const onTaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (mention.active && mention.options.length) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setMention((m) => ({ ...m, sel: Math.min(m.sel + 1, m.options.length - 1) })); return; }
@@ -144,6 +173,12 @@ const {
           <input type="checkbox" checked={guardrails} onChange={(e) => setGuardrails(e.target.checked)} />
           approve edits
         </label>
+        {chat.length > 0 && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+            <button className="btn tiny" title="Export as Markdown" onClick={() => exportChat('markdown')}>↓ MD</button>
+            <button className="btn tiny" title="Export as JSON" onClick={() => exportChat('json')}>↓ JSON</button>
+          </div>
+        )}
       </div>
       {showParams && (
         <div className="row" style={{ gap: 6, padding: '4px 10px', alignItems: 'center' }}>
@@ -195,12 +230,7 @@ const {
         ))}
 {running && <div className="chat-entry assistant"><span className="spinner" /> working…</div>}
         {!running && lastUsage && (lastUsage.promptTokens || lastUsage.completionTokens) && (
-          <div className="muted" style={{ padding: '0 10px', fontSize: 11, display: 'flex', gap: 8, alignItems: 'center' }}>
-            tokens: {lastUsage.promptTokens ?? 0} in · {lastUsage.completionTokens ?? 0} out
-            <span style={{ marginLeft: 8, color: 'var(--yellow)' }}>
-              ~${calculateCost(lastUsage.promptTokens ?? 0, lastUsage.completionTokens ?? 0, activeModel).toFixed(4)}
-            </span>
-          </div>
+          <TokenUsageDashboard usage={lastUsage} model={activeModel} />
         )}
       </div>
       <div className="chat-input" style={{ position: 'relative' }}>
@@ -248,6 +278,35 @@ const {
           )}
           <button className="btn subtle" onClick={clearChat}>Clear</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TokenUsageDashboard({ usage, model }: { usage: { promptTokens?: number; completionTokens?: number }; model: string }) {
+  const input = usage.promptTokens ?? 0;
+  const output = usage.completionTokens ?? 0;
+  const total = input + output;
+  const cost = calculateCost(input, output, model);
+  const inputPct = total > 0 ? (input / total) * 100 : 0;
+  const outputPct = total > 0 ? (output / total) * 100 : 0;
+
+  return (
+    <div style={{ padding: '6px 10px', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 600 }}>Token Usage</span>
+        <span style={{ color: cost > 0 ? 'var(--yellow)' : 'var(--green)' }}>
+          {cost > 0 ? `~$${cost.toFixed(4)}` : 'free (local)'}
+        </span>
+      </div>
+      <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: 'var(--border)' }}>
+        <div style={{ width: `${inputPct}%`, background: '#3b82f6', transition: 'width 0.3s' }} />
+        <div style={{ width: `${outputPct}%`, background: '#8b5cf6', transition: 'width 0.3s' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <span><span style={{ color: '#3b82f6' }}>&#9632;</span> Input: {input.toLocaleString()}</span>
+        <span><span style={{ color: '#8b5cf6' }}>&#9632;</span> Output: {output.toLocaleString()}</span>
+        <span style={{ marginLeft: 'auto', color: 'var(--fg-muted)' }}>Total: {total.toLocaleString()}</span>
       </div>
     </div>
   );
