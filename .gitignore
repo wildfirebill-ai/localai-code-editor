@@ -23,6 +23,7 @@ npm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+.zed/
 
 # Runtime data (git, workspaces, MCP state)
 .data/
