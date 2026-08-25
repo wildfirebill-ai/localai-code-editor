@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { stat, mkdir, writeFile } from 'node:fs/promises';
+import { stat, mkdir, writeFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, extname, join, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -617,6 +617,30 @@ export class EditorServer {
         return this.sendResult(ws, id, result);
       }
 
+      // ---- Update Checker ----
+      case 'update.check': {
+        const result = await this.checkForUpdates();
+        return this.sendResult(ws, id, result);
+      }
+
+      // ---- Agent Memory ----
+      case 'memory.list': {
+        const notes = await this.listMemory();
+        return this.sendResult(ws, id, notes);
+      }
+      case 'memory.read': {
+        const note = await this.readMemory(String(params.key));
+        return this.sendResult(ws, id, note);
+      }
+      case 'memory.write': {
+        await this.writeMemory(String(params.key), String(params.content ?? ''), String(params.category ?? 'general'));
+        return this.sendResult(ws, id, { ok: true });
+      }
+      case 'memory.delete': {
+        await this.deleteMemory(String(params.key));
+        return this.sendResult(ws, id, { ok: true });
+      }
+
       // ---- Filesystem (for the editor tree + agent file tools) ----
       case 'fs.list': return this.sendResult(ws, id, await this.fs.listFiles(String(params.path ?? '')));
       case 'fs.read': return this.sendResult(ws, id, await this.fs.readFile(String(params.path)));
@@ -702,6 +726,104 @@ export class EditorServer {
   }
 
   private sandboxContainerId: string | null = null;
+
+  // ---- Update Checker ----
+
+  private async checkForUpdates(): Promise<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string }> {
+    const currentVersion = require('../../package.json').version;
+    try {
+      const { execSync } = await import('node:child_process');
+      const body = execSync('curl -s https://api.github.com/repos/wildfirebill-ai/localai-code-editor/releases/latest', {
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      const release = JSON.parse(body);
+      const latestVersion = (release.tag_name ?? '').replace(/^v/, '');
+      return {
+        currentVersion,
+        latestVersion,
+        hasUpdate: latestVersion !== currentVersion,
+        releaseUrl: release.html_url,
+      };
+    } catch {
+      return { currentVersion, latestVersion: currentVersion, hasUpdate: false };
+    }
+  }
+
+  // ---- Agent Memory ----
+
+  private async listMemory(): Promise<{ key: string; content: string; category: string; updated: string }[]> {
+    const memDir = join(this.config.workspace, '.localai', 'memory');
+    let entries: string[];
+    try {
+      entries = await readdir(memDir);
+    } catch {
+      return [];
+    }
+    const notes: { key: string; content: string; category: string; updated: string }[] = [];
+    for (const entry of entries) {
+      if (!entry.endsWith('.md')) continue;
+      try {
+        const raw = await readFile(join(memDir, entry), 'utf-8');
+        const lines = raw.split('\n');
+        const meta: Record<string, string> = {};
+        let bodyStart = 0;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line === '---') { bodyStart = i + 1; break; }
+          const colon = line.indexOf(':');
+          if (colon > 0) meta[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
+        }
+        notes.push({
+          key: entry.replace(/\.md$/, ''),
+          content: lines.slice(bodyStart).join('\n').trim(),
+          category: meta.category ?? 'general',
+          updated: meta.updated ?? '',
+        });
+      } catch { continue; }
+    }
+    return notes.sort((a, b) => (b.updated ?? '').localeCompare(a.updated ?? ''));
+  }
+
+  private async readMemory(key: string): Promise<{ key: string; content: string; category: string } | null> {
+    try {
+      const raw = await readFile(join(this.config.workspace, '.localai', 'memory', `${key}.md`), 'utf-8');
+      const lines = raw.split('\n');
+      const meta: Record<string, string> = {};
+      let bodyStart = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line === '---') { bodyStart = i + 1; break; }
+        const colon = line.indexOf(':');
+        if (colon > 0) meta[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
+      }
+      return { key, content: lines.slice(bodyStart).join('\n').trim(), category: meta.category ?? 'general' };
+    } catch {
+      return null;
+    }
+  }
+
+  private async writeMemory(key: string, content: string, category: string): Promise<void> {
+    const memDir = join(this.config.workspace, '.localai', 'memory');
+    await mkdir(memDir, { recursive: true });
+    const updated = new Date().toISOString().slice(0, 19);
+    const body = [
+      '---',
+      `category: ${category}`,
+      `updated: ${updated}`,
+      '---',
+      '',
+      content,
+    ].join('\n');
+    await writeFile(join(memDir, `${key}.md`), body, 'utf-8');
+  }
+
+  private async deleteMemory(key: string): Promise<void> {
+    try {
+      const { unlinkSync } = await import('node:fs');
+      unlinkSync(join(this.config.workspace, '.localai', 'memory', `${key}.md`));
+    } catch { /* ignore */ }
+  }
 
   private async getSandboxStatus(): Promise<{ available: boolean; running: boolean; containerId?: string; image?: string; error?: string }> {
     try {

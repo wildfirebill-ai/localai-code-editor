@@ -38,6 +38,13 @@ export function SettingsPanel() {
   const [err, setErr] = useState('');
   const [sysPrompt, setSysPrompt] = useState<string | null>(null);
   const [sysSaved, setSysSaved] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string } | null>(null);
+  const [autoCheckUpdates, setAutoCheckUpdates] = useState(() => localStorage.getItem('localai.autoCheckUpdates') !== '0');
+  const [memoryNotes, setMemoryNotes] = useState<{ key: string; content: string; category: string; updated: string }[]>([]);
+  const [memoryKey, setMemoryKey] = useState('');
+  const [memoryContent, setMemoryContent] = useState('');
+  const [memoryCategory, setMemoryCategory] = useState('general');
+  const [memorySaved, setMemorySaved] = useState(false);
   const [lspForm, setLspForm] = useState<null | { id: string; language: string; extensions: string; command: string; args: string }>(null);
   const [lspErr, setLspErr] = useState('');
   const [wsInput, setWsInput] = useState('');
@@ -225,6 +232,47 @@ export function SettingsPanel() {
   };
 
   useEffect(() => { void refreshSandbox(); }, [client]);
+
+  // ---- Update Checker ----
+  const checkUpdates = async () => {
+    try {
+      const info = await client.request<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string }>('update.check');
+      setUpdateInfo(info);
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => {
+    if (autoCheckUpdates) void checkUpdates();
+  }, [client, autoCheckUpdates]);
+
+  // ---- Agent Memory ----
+  const loadMemory = async () => {
+    try {
+      const notes = await client.request<{ key: string; content: string; category: string; updated: string }[]>('memory.list');
+      setMemoryNotes(notes);
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => { void loadMemory(); }, [client, workspace]);
+
+  const saveMemory = async () => {
+    if (!memoryKey.trim()) return;
+    try {
+      await client.request('memory.write', { key: memoryKey.trim(), content: memoryContent, category: memoryCategory });
+      setMemorySaved(true);
+      setTimeout(() => setMemorySaved(false), 2000);
+      setMemoryKey('');
+      setMemoryContent('');
+      await loadMemory();
+    } catch { /* ignore */ }
+  };
+
+  const deleteMemory = async (key: string) => {
+    try {
+      await client.request('memory.delete', { key });
+      await loadMemory();
+    } catch { /* ignore */ }
+  };
 
   // ---- Workspace ----
 
@@ -489,6 +537,82 @@ export function SettingsPanel() {
           <pre style={{ margin: 0, padding: 8, background: 'var(--bg-editor)', borderRadius: 4, fontSize: 11, maxHeight: 120, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
             {sandboxOutput}
           </pre>
+        )}
+      </div>
+
+      <div className="panel-title">Updates</div>
+      <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={autoCheckUpdates}
+            onChange={(e) => {
+              setAutoCheckUpdates(e.target.checked);
+              localStorage.setItem('localai.autoCheckUpdates', e.target.checked ? '1' : '0');
+            }}
+          />
+          Check for updates on startup
+        </label>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <button className="btn tiny" onClick={checkUpdates}>Check now</button>
+          {updateInfo && (
+            <span className="muted" style={{ fontSize: 11 }}>
+              v{updateInfo.currentVersion}
+              {updateInfo.hasUpdate ? (
+                <span style={{ color: 'var(--yellow)' }}> → v{updateInfo.latestVersion} available!</span>
+              ) : (
+                <span style={{ color: 'var(--green)' }}> ✓ up to date</span>
+              )}
+            </span>
+          )}
+        </div>
+        {updateInfo?.hasUpdate && updateInfo.releaseUrl && (
+          <a href={updateInfo.releaseUrl} target="_blank" rel="noopener noreferrer" className="btn tiny" style={{ alignSelf: 'flex-start' }}>
+            View release →
+          </a>
+        )}
+      </div>
+
+      <div className="panel-title">Agent Memory</div>
+      <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
+        Persistent notes the agent reads for context — build steps, config, important findings.
+      </p>
+      <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <input placeholder="Key (e.g. build-steps, config-notes)" value={memoryKey} onChange={(e) => setMemoryKey(e.target.value)} style={{ fontSize: 12 }} />
+        <textarea
+          placeholder="Content — the agent reads this for context"
+          value={memoryContent}
+          onChange={(e) => setMemoryContent(e.target.value)}
+          rows={3}
+          style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
+        />
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <select value={memoryCategory} onChange={(e) => setMemoryCategory(e.target.value)} style={{ fontSize: 11 }}>
+            <option value="general">General</option>
+            <option value="build">Build</option>
+            <option value="config">Config</option>
+            <option value="findings">Findings</option>
+            <option value="decisions">Decisions</option>
+          </select>
+          <button className="btn tiny primary" onClick={saveMemory}>Save</button>
+          {memorySaved && <span className="muted" style={{ fontSize: 11 }}>&#10003; saved</span>}
+        </div>
+        {memoryNotes.length > 0 && (
+          <ul className="changes" style={{ marginTop: 4 }}>
+            {memoryNotes.map((n) => (
+              <li key={n.key} className="change" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                <div className="row">
+                  <span className="change-path" style={{ cursor: 'pointer' }} onClick={() => { setMemoryKey(n.key); setMemoryContent(n.content); setMemoryCategory(n.category); }}>
+                    {n.key}
+                  </span>
+                  <span className="muted" style={{ fontSize: 10 }}>{n.category}</span>
+                  {n.updated && <span className="muted" style={{ fontSize: 10 }}>{n.updated}</span>}
+                  <button className="btn tiny" onClick={() => void deleteMemory(n.key)}>×</button>
+                </div>
+                <pre style={{ margin: 0, fontSize: 10, maxHeight: 60, overflow: 'hidden', whiteSpace: 'pre-wrap' }}>{n.content.slice(0, 200)}</pre>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
