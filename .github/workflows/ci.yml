@@ -120,14 +120,33 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v8
         with:
           path: release-artifacts
           pattern: localai-editor-*
           merge-multiple: true
 
+      - name: Build release summary from CHANGELOG
+        id: notes
+        run: |
+          node -e '
+            const fs = require("fs");
+            const tag = process.env.GITHUB_REF_NAME.replace(/^v/, "");
+            const md = fs.readFileSync("CHANGELOG.md", "utf-8");
+            const re = new RegExp("## \\[" + tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|\\n## Unreleased|$)", "m");
+            const m = md.match(re);
+            let body = m ? m[1].trim() : "";
+            if (!body) body = "Release " + tag + ".";
+            const header = "# LocalAI Code Editor v" + tag + "\n\n";
+            fs.writeFileSync("release-notes.md", header + body + "\n\n**Full Changelog**: https://github.com/" + process.env.GITHUB_REPOSITORY + "/compare/v" + (require("child_process").execSync("git describe --tags --abbrev=0 HEAD~1").toString().trim().replace(/^v/,"") || "0.1.9") + "...v" + tag + "\n");
+          '
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
       - name: Publish Release
         uses: softprops/action-gh-release@v3
         with:
           files: release-artifacts/**/*
-          generate_release_notes: true
+          body_path: release-notes.md
