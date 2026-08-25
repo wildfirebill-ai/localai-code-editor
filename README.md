@@ -1,4 +1,11 @@
-# LocalAI Code Editor
+<h1 align="center">LocalAI Code Editor</h1>
+
+<p align="center">
+  <b>Free, open-source, self-hosted AI code editor powered by local LLMs</b><br>
+  <sub>No cloud. No API keys. No telemetry. Your code stays on your machine.</sub>
+</p>
+
+<!-- SEO: LocalAI Code Editor is a free, open-source, self-hosted AI code editor that runs entirely offline using local LLMs like Ollama, LM Studio, and llama.cpp. It features an agentic AI assistant, MCP protocol support, agent skills marketplace, Docker-in-Docker sandbox, LSP IntelliSense, Monaco editor, git panel, and builds for Windows, macOS, Linux, Docker, and Unraid. -->
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
@@ -17,7 +24,9 @@
 
 ![LocalAI Code Editor Screenshot](docs/images/screenshot-editor.png)
 
-LocalAI Code Editor is a multi-platform code editor with a built-in **agentic AI assistant** that works offline with the models you already run locally (Ollama, LM Studio, llama.cpp, or any OpenAI-compatible server). It ships with full **MCP (Model Context Protocol) support**, **agent skills**, **language-server (LSP) IntelliSense**, and a complete **git panel** — all in one installable editor for **Windows, macOS, Linux, and Docker (Unraid)**.
+**What is LocalAI Code Editor?** LocalAI Code Editor is a free, open-source, self-hosted AI code editor that runs entirely on your local machine. It connects to local LLMs — Ollama, LM Studio, llama.cpp, vLLM, or any OpenAI-compatible server — to provide an agentic AI coding assistant without sending your code to the cloud. Think VS Code + AI, but private.
+
+**Key features:** Monaco Editor (same as VS Code), agentic AI that reads/writes files and runs commands, MCP protocol support for external tools, a marketplace of 50+ agent skills, Docker-in-Docker sandboxing, LSP IntelliSense, full git panel with blame, and builds for Windows, macOS, Linux, Docker, and Unraid.
 
 ## 🎯 Why LocalAI Code Editor?
 
@@ -494,3 +503,7 @@ To report a security issue, email **security@wildfirebill.ai** or use [GitHub Se
 ---
 
 **Star ⭐ this repo if you find it useful!** It helps others discover LocalAI Code Editor.
+
+---
+
+<!-- SEO Keywords: local AI code editor, open source AI editor, self-hosted code editor, offline AI coding, Ollama code editor, local LLM editor, MCP code editor, agent skills, AI code assistant, private code editor, no cloud code editor, local-first AI, Monaco editor AI, Electron AI editor, Docker code editor, Unraid code editor, TypeScript AI editor, React code editor, AI pair programming, local AI assistant, code editor with AI, open source developer tools, self-hosted developer tools -->
