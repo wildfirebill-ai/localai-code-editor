@@ -12,7 +12,7 @@
   <Overview>A free, open-source, self-hosted AI code editor powered by local LLMs. Features agentic AI assistant, MCP protocol support, agent skills marketplace, Docker sandbox, LSP IntelliSense, git panel, and multi-platform builds. Connects to Ollama, LM Studio, llama.cpp, or any OpenAI-compatible server. No cloud, no API keys, no telemetry.</Overview>
   <Category>Tools: AI:</Category>
   <WebUI>http://[IP]:[PORT:4801]</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/wildfirebill-ai/localai-code-editor/main/unraid/template.xml</TemplateURL>
+  <TemplateURL>https://raw.githubusercontent.com/wildfirebill-ai/localai-code-editor/main/unraid/localai-code-editor.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/wildfirebill-ai/localai-code-editor/main/unraid/icon.png</Icon>
   <Donate/>
   <Requires/>
