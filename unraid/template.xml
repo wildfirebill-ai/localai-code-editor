@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>LocalAI Code Editor</Name>
+  <Repository>ghcr.io/wildfirebill-ai/localai-code-editor</Repository>
+  <Registry>https://github.com/wildfirebill-ai/localai-code-editor/pkgs/container/localai-code-editor</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/wildfirebill-ai/localai-code-editor/issues</Support>
+  <Project>https://github.com/wildfirebill-ai/localai-code-editor</Project>
+  <Overview>A free, open-source, self-hosted AI code editor powered by local LLMs. Features agentic AI assistant, MCP protocol support, agent skills marketplace, Docker sandbox, LSP IntelliSense, git panel, and multi-platform builds. Connects to Ollama, LM Studio, llama.cpp, or any OpenAI-compatible server. No cloud, no API keys, no telemetry.</Overview>
+  <Category>Tools: AI:</Category>
+  <WebUI>http://[IP]:[PORT:4801]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/wildfirebill-ai/localai-code-editor/main/unraid/template.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/wildfirebill-ai/localai-code-editor/main/unraid/icon.png</Icon>
+  <Donate/>
+  <Requires/>
+  <Config Name="Workspace" Target="/workspace" Default="/mnt/user/appdata/localai-code-editor/workspace" Mode="rw" Description="Path to the repository or project you want to edit" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/localai-code-editor/workspace</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/localai-code-editor/data" Mode="rw" Description="Persistent data directory for skills, memory, and configuration" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/localai-code-editor/data</Config>
+  <Config Name="AppData" Target="/root/.localai" Default="/mnt/user/appdata/localai-code-editor/appdata" Mode="rw" Description="Application data directory (skills, memory, config)" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/localai-code-editor/appdata</Config>
+  <Config Name="LocalAI Port" Target="4801" Default="4801" Mode="tcp" Description="Port for the web UI" Type="Port" Display="always" Required="true" Mask="false">4801</Config>
+  <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="rw" Description="Mount Docker socket for agent to build/test Docker programs (WARNING: grants root-equivalent host access)" Type="Path" Display="always" Required="false" Mask="false">/var/run/docker.sock</Config>
+  <Config Name="LOCALAI_HOST" Target="LOCALAI_HOST" Default="0.0.0.0" Mode="ro" Description="Server bind address" Type="Variable" Display="always" Required="false" Mask="false">0.0.0.0</Config>
+  <Config Name="LOCALAI_PORT" Target="LOCALAI_PORT" Default="4801" Mode="ro" Description="Server port" Type="Variable" Display="always" Required="false" Mask="false">4801</Config>
+  <Config Name="LOCALAI_SKILLS_DIR" Target="LOCALAI_SKILLS_DIR" Default="/app/skills" Mode="ro" Description="Path to builtin skills directory" Type="Variable" Display="always" Required="false" Mask="false">/app/skills</Config>
+  <Config Name="LOCALAI_WEB_DIST" Target="LOCALAI_WEB_DIST" Default="/app/web" Mode="ro" Description="Path to web UI dist directory" Type="Variable" Display="always" Required="false" Mask="false">/app/web</Config>
+</Container>
