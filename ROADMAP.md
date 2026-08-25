@@ -22,33 +22,35 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 
 ---
 
-### v0.2.0 — Agent Power-Ups 🔄 (Q4 2026)
+### v0.2.0 — Agent Power-Ups ✅ (Released 2026-08-23)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
-| **Approve-before-apply mode** | ✅ **Shipped in Unreleased** — approve/deny per write+command via Agent panel toggle (diff-level review planned). | High | 🔄 Shipped (v0.1.x) |
-| **Agent Skills Marketplace** | Built-in browser to discover, install, and share skills from a community registry | High | 📋 Planned |
-| **Docker-in-Docker Sandbox** | Safe, isolated environment for agent to run/test code without host access | High | 📋 Planned |
-| **Agent System Prompt Tuning UI** | Visual editor to customize the agent's system prompt, tool descriptions, and behavior | Medium | 📋 Planned |
-| **Skill Auto-Application** | Auto-suggest and apply relevant skills based on file type, project type, or task | Medium | 📋 Planned |
-| **Enhanced MCP Tool Discovery** | Better UI for browsing available tools from connected MCP servers | Medium | 📋 Planned |
-| **Agent Task History/Replay** | View, replay, and branch from previous agent task trajectories | Medium | 📋 Planned |
-
----
+| **Approve-before-apply mode** | Approve/deny per write+command via Agent panel toggle (diff-level review planned). | High | ✅ Done (v0.1.x) |
+| **MCP Server Discovery** | Curated registry of 15+ known MCP servers with search, category filtering, and one-click install. | High | ✅ Done (v0.2.0) |
+| **Agent Task History** | View, replay, and branch from previous agent task trajectories. | Medium | ✅ Done (v0.2.0) |
+| **Model Comparison** | Run same prompt against multiple models side-by-side. | Medium | ✅ Done (v0.2.0) |
+| **Code Formatting / Auto-save** | Format code with language-specific rules; auto-save with configurable delay. | Medium | ✅ Done (v0.2.0) |
+| **Terminal Integration** | Run commands in an integrated terminal over WebSocket. | Medium | ✅ Done (v0.2.0) |
+| **Git Blame Annotations** | Show who wrote each line and when. | Low | ✅ Done (v0.2.0) |
+| **Agent Skills Marketplace** | Built-in browser to discover, install, and share skills from a community registry | High | ⬜ Planned |
+| **Docker-in-Docker Sandbox** | Safe, isolated environment for agent to run/test code without host access | High | ⬜ Planned |
+| **Agent System Prompt Tuning UI** | Visual editor to customize the agent's system prompt, tool descriptions, and behavior | Medium | ⬜ Planned |
+| **Skill Auto-Application** | Auto-suggest and apply relevant skills based on file type, project type, or task | Medium | ⬜ Planned |
+| **Enhanced MCP Tool Discovery** | Better UI for browsing available tools from connected MCP servers | Medium | ⬜ Planned |
 
 ### v0.3.0 — Editor Polish 🎨 (Q1 2027)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
-| **Multi-Tab Editing** | Multiple file tabs with split views | High | 📋 Planned |
-| **File Diff View** | Inline and side-by-side diff for git changes and agent edits | High | 📋 Planned |
-| **Advanced Git Operations** | Interactive rebase, cherry-pick, stash, submodule support | Medium | 📋 Planned |
-| **Workspace Symbols** | Go-to-symbol across workspace (LSP-powered) | Medium | 📋 Planned |
-| **Refactoring Actions** | Extract function, rename, move file (LSP code actions) | Medium | 📋 Planned |
-| **Custom Keybindings** | User-configurable keyboard shortcuts | Low | 📋 Planned |
-| **Theme Customization** | Custom color themes, font ligatures, editor settings UI | Low | 📋 Planned |
-
----
+| **Multi-Tab Editing** | Multiple file tabs with split views | High | ✅ Done (v0.2.0) |
+| **File Diff View** | Inline and side-by-side diff for git changes and agent edits | High | ✅ Done (v0.2.0) |
+| **Search Across Files** | Workspace-wide text search with regex support | High | ✅ Done (v0.2.0) |
+| **Advanced Git Operations** | Interactive rebase, cherry-pick, stash, submodule support | Medium | ⬜ Planned |
+| **Workspace Symbols** | Go-to-symbol across workspace (LSP-powered) | Medium | ⬜ Planned |
+| **Refactoring Actions** | Extract function, rename, move file (LSP code actions) | Medium | ⬜ Planned |
+| **Custom Keybindings** | User-configurable keyboard shortcuts | Low | ✅ Done (v0.2.0) |
+| **Theme Customization** | Custom color themes, font ligatures, editor settings UI | Low | ✅ Done (v0.2.0) |
 
 ### v0.4.0 — Collaboration & Scale 👥 (Q2 2027)
 
@@ -120,4 +122,4 @@ Current top requests:
 
 ---
 
-*Last updated: 2026-08-20*
+*Last updated: 2026-08-25*
