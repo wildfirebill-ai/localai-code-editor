@@ -32,7 +32,7 @@ const PRESETS: { id: string; label: string; defaultBaseUrl: string; hint: string
 const EMPTY_PROV: ProvForm = { id: '', label: '', baseUrl: '', apiKey: '' };
 
 export function SettingsPanel() {
-  const { client, workspace, setWorkspace, providers, providerHealth, mcpStatus, mcpTools, lspStatus, refresh } = useApp();
+  const { client, workspace, setWorkspace, providers, providerHealth, mcpStatus, mcpTools, lspStatus, refresh, settings, updateSettings } = useApp();
   const [form, setForm] = useState<McpForm>(EMPTY_MCP);
   const [err, setErr] = useState('');
   const [sysPrompt, setSysPrompt] = useState<string | null>(null);
@@ -235,6 +235,43 @@ export function SettingsPanel() {
           </ul>
         </>
       )}
+
+      <div className="panel-title">Editor Settings</div>
+      <div className="editor-settings" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input type="checkbox" checked={settings.autoSave} onChange={(e) => updateSettings('autoSave', e.target.checked)} />
+          Auto-save files
+        </label>
+        {settings.autoSave && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 24 }}>
+            <span className="muted" style={{ fontSize: 11 }}>Delay:</span>
+            <input
+              type="number" min={100} max={5000} step={100}
+              value={settings.autoSaveDelay}
+              onChange={(e) => updateSettings('autoSaveDelay', parseInt(e.target.value, 10) || 1000)}
+              style={{ width: 80 }}
+            />
+            <span className="muted" style={{ fontSize: 11 }}>ms</span>
+          </label>
+        )}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input type="checkbox" checked={settings.showMinimap} onChange={(e) => updateSettings('showMinimap', e.target.checked)} />
+          Show minimap
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="muted" style={{ fontSize: 11 }}>Font size:</span>
+          <input
+            type="number" min={10} max={32}
+            value={settings.fontSize}
+            onChange={(e) => updateSettings('fontSize', parseInt(e.target.value, 10) || 14)}
+            style={{ width: 60 }}
+          />
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input type="checkbox" checked={settings.wordWrap === 'on'} onChange={(e) => updateSettings('wordWrap', e.target.checked ? 'on' : 'off')} />
+          Word wrap
+        </label>
+      </div>
 
       <div className="panel-title">Agent Instructions (.localai/system.md)</div>
       <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
