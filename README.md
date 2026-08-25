@@ -56,26 +56,33 @@ LocalAI Code Editor is a multi-platform code editor with a built-in **agentic AI
 | Category | Capabilities |
 |----------|--------------|
 | **AI Agent** | Streamed chat that reads/writes files, runs commands, calls MCP tools, and iterates to completion |
+| **Local LLM Support** | Auto-detect Ollama, LM Studio, llama.cpp, and any OpenAI-compatible endpoint |
+| **MCP Client** | Connect local (stdio) and remote (HTTP/SSE) MCP servers; expose their tools to the agent |
+| **Agent Skills** | 50+ built-in skills; project + user `SKILL.md` files with frontmatter; loaded on demand |
+| **Skills Marketplace** | Installed/Discover tabs with 18 curated skills across 12 categories; one-click install |
+| **Language Servers** | LSP-based completion, hover, diagnostics, definition, references, rename |
+| **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log, blame annotations |
+| **File Explorer** | Browse, open, edit, save — plus New File/Folder, Rename, and Delete from the sidebar |
+| **Quick Open & Search** | Ctrl+P fuzzy file finder; workspace-wide text search with regex; @file mentions |
+| **Monaco Editor** | The industry-standard editor used by VS Code, running locally |
+
+<details>
+<summary><b>View all 28 features…</b></summary>
+
+| Category | Capabilities |
+|----------|--------------|
 | **Agent Task History** | View, replay, and branch from previous agent task trajectories |
 | **Model Comparison** | Run the same prompt against multiple models side-by-side |
 | **Agent System Prompt Tuning** | Preset templates (Code Assistant, Security Reviewer, DevOps, Refactor), character count, expanded editor |
 | **Approve-before-Apply** | Approve/deny per write+command via Agent panel toggle (diff-level review) |
 | **Docker-in-Docker Sandbox** | Isolated Docker container for safe agent code execution — start/stop/exec via Settings |
-| **Local LLM Support** | Auto-detect Ollama, LM Studio, llama.cpp, and any OpenAI-compatible endpoint |
 | **Provider Setup UI** | Add, edit, test, and remove providers at runtime (Settings panel) — persisted per workspace |
 | **Workspace Management** | Native folder picker on launch; switch projects anytime; live-rebinds git/skills/LSP |
-| **MCP Client** | Connect local (stdio) and remote (HTTP/SSE) MCP servers; expose their tools to the agent |
 | **MCP Server Discovery** | Curated registry of 15+ servers with search, category filter, and one-click install |
 | **MCP Tool Discovery** | Searchable tool list grouped by server with expandable sections and descriptions |
-| **Agent Skills** | 50+ built-in skills; project + user `SKILL.md` files with frontmatter; loaded on demand |
-| **Skills Marketplace** | Installed/Discover tabs with 18 curated skills across 12 categories; one-click install |
 | **Skill Auto-Application** | Workspace-aware skill suggestions based on project indicators and path heuristics |
-| **Language Servers** | LSP-based completion, hover, diagnostics, definition, references, rename |
-| **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log, blame annotations |
 | **Terminal Integration** | Run commands in an integrated terminal over WebSocket |
 | **Code Formatting** | Format code with language-specific rules; auto-save with configurable delay |
-| **File Explorer** | Browse, open, edit, save — plus New File/Folder, Rename, and Delete from the sidebar |
-| **Quick Open & Search** | Ctrl+P fuzzy file finder; workspace-wide text search with regex; @file mentions |
 | **Command Palette** | Quick access to all editor commands via Ctrl+Shift+P |
 | **Settings Persistence** | Editor preferences saved to localStorage; workspace settings in `.localai/` |
 | **Multi-tab Support** | Tab management utilities for multiple files |
@@ -84,8 +91,9 @@ LocalAI Code Editor is a multi-platform code editor with a built-in **agentic AI
 | **File Change Tracking** | Track agent modifications to files with change types |
 | **Editor Settings UI** | Auto-save toggle, minimap visibility, font size, word wrap controls |
 | **Markdown Preview** | Toggle Edit/Preview for `.md` files |
-| **Monaco Editor** | The industry-standard editor used by VS Code, running locally |
 | **Multi-Platform** | Windows, macOS, Linux (Electron), and any web-capable device (Docker) |
+
+</details>
 
 ---
 
