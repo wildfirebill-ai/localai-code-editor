@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-10-orange)](https://pnpm.io/)
-[![Electron](https://img.shields.io/badge/Electron-33-9feaf9)](https://www.electronjs.org/)
+[![Electron](https://img.shields.io/badge/Electron-43-9feaf9)](https://www.electronjs.org/)
 [![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-v0.48-007ACC)](https://microsoft.github.io/monaco-editor/)
 [![MCP](https://img.shields.io/badge/MCP-Model_Context_Protocol-purple)](https://modelcontextprotocol.io/)
 [![Ollama](https://img.shields.io/badge/Ollama-Compatible-black)](https://ollama.com/)
@@ -56,16 +56,33 @@ LocalAI Code Editor is a multi-platform code editor with a built-in **agentic AI
 | Category | Capabilities |
 |----------|--------------|
 | **AI Agent** | Streamed chat that reads/writes files, runs commands, calls MCP tools, and iterates to completion |
+| **Agent Task History** | View, replay, and branch from previous agent task trajectories |
+| **Model Comparison** | Run the same prompt against multiple models side-by-side |
+| **Agent System Prompt Tuning** | Preset templates (Code Assistant, Security Reviewer, DevOps, Refactor), character count, expanded editor |
+| **Approve-before-Apply** | Approve/deny per write+command via Agent panel toggle (diff-level review) |
+| **Docker-in-Docker Sandbox** | Isolated Docker container for safe agent code execution — start/stop/exec via Settings |
 | **Local LLM Support** | Auto-detect Ollama, LM Studio, llama.cpp, and any OpenAI-compatible endpoint |
 | **Provider Setup UI** | Add, edit, test, and remove providers at runtime (Settings panel) — persisted per workspace |
 | **Workspace Management** | Native folder picker on launch; switch projects anytime; live-rebinds git/skills/LSP |
 | **MCP Client** | Connect local (stdio) and remote (HTTP/SSE) MCP servers; expose their tools to the agent |
-| **Agent Skills** | Project + user `SKILL.md` files with frontmatter; loaded into the agent on demand |
+| **MCP Server Discovery** | Curated registry of 15+ servers with search, category filter, and one-click install |
+| **MCP Tool Discovery** | Searchable tool list grouped by server with expandable sections and descriptions |
+| **Agent Skills** | 50+ built-in skills; project + user `SKILL.md` files with frontmatter; loaded on demand |
+| **Skills Marketplace** | Installed/Discover tabs with 18 curated skills across 12 categories; one-click install |
+| **Skill Auto-Application** | Workspace-aware skill suggestions based on project indicators and path heuristics |
 | **Language Servers** | LSP-based completion, hover, diagnostics, definition, references, rename |
-| **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log |
+| **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log, blame annotations |
+| **Terminal Integration** | Run commands in an integrated terminal over WebSocket |
+| **Code Formatting** | Format code with language-specific rules; auto-save with configurable delay |
 | **File Explorer** | Browse, open, edit, save — plus New File/Folder, Rename, and Delete from the sidebar |
-| **Quick Open & Search** | Ctrl+P fuzzy file finder; workspace-wide text search grouped by file |
-| **@file Mentions** | Type `@` in the agent prompt to attach file contents as context, with autocomplete |
+| **Quick Open & Search** | Ctrl+P fuzzy file finder; workspace-wide text search with regex; @file mentions |
+| **Command Palette** | Quick access to all editor commands via Ctrl+Shift+P |
+| **Settings Persistence** | Editor preferences saved to localStorage; workspace settings in `.localai/` |
+| **Multi-tab Support** | Tab management utilities for multiple files |
+| **Error Handling** | Structured error types and retry logic throughout |
+| **Keyboard Shortcuts** | Reference for all editor commands with platform-specific keys |
+| **File Change Tracking** | Track agent modifications to files with change types |
+| **Editor Settings UI** | Auto-save toggle, minimap visibility, font size, word wrap controls |
 | **Markdown Preview** | Toggle Edit/Preview for `.md` files |
 | **Monaco Editor** | The industry-standard editor used by VS Code, running locally |
 | **Multi-Platform** | Windows, macOS, Linux (Electron), and any web-capable device (Docker) |
@@ -186,9 +203,18 @@ Create a `localai.config.json` in your workspace (full example: [`localai.config
 
 ## 🧠 Agent Skills
 
-**51 production-grade skills ship built-in** and work in every workspace — commit, test-and-fix, typecheck-fix, lint-clean, debug-failure, refactor-safe, docker-build-run, dependency-update, git-release, write-docs, security-check, and 40 more covering git, quality, testing, performance, frontend, backend, ops, and AI integration. Enable/disable them from the **Skills** panel.
+**50+ production-grade skills ship built-in** and work in every workspace — commit, test-and-fix, typecheck-fix, lint-clean, debug-failure, refactor-safe, docker-build-run, dependency-update, git-release, write-docs, security-check, and 40 more covering git, quality, testing, performance, frontend, backend, ops, and AI integration.
 
-You can also author your own. Skills are Markdown files with frontmatter that teach the AI your conventions, workflows, and best practices. Drop a `SKILL.md` into either location:
+### Skills Marketplace
+
+The **Skills** panel (🧠 icon) has two tabs:
+
+- **Installed** — all loaded skills with enable/disable controls and workspace-aware suggestions
+- **Discover** — browse 18 curated skills across 12 categories (git, backend, frontend, devops, testing, security, quality, docs, docker, ai-integration, performance, maintenance) with search and one-click install
+
+### Custom Skills
+
+Skills are Markdown files with frontmatter that teach the AI your conventions, workflows, and best practices. Drop a `SKILL.md` into either location:
 
 - **Project skills:** `<workspace>/.localai/skills/<name>/SKILL.md` (overrides builtins)
 - **User (global) skills:** `~/.localai/skills/<name>/SKILL.md`
@@ -197,13 +223,12 @@ You can also author your own. Skills are Markdown files with frontmatter that te
 ---
 name: ts-check
 description: Typecheck a package with pnpm typecheck before committing
+category: quality
 ---
 Run `pnpm typecheck` from the package root and fix any errors.
 ```
 
-See [docs/skill-spec.md](docs/skill-spec.md) for the full format, or ask the agent to use the built-in `skill-author` skill to write one for you.
-
-Project skills override same-named global skills. The agent loads them on demand via the `read_skill` tool. See [example skills](.localai/skills/) and [SKILL.md spec](https://github.com/wildfirebill-ai/localai-code-editor/blob/main/docs/skill-spec.md).
+Project skills override same-named global skills. The agent loads them on demand via the `read_skill` tool.
 
 ---
 
@@ -260,7 +285,16 @@ Connect any MCP server — local subprocesses and remote endpoints:
 }
 ```
 
-You can also connect servers on the fly from the **MCP** panel in the UI. Tools from all connected servers are exposed to the agent automatically.
+### MCP Server Discovery
+
+The **MCP Servers** panel has two tabs:
+
+- **Installed** — connected servers with status indicators, tool counts, and a manual add form
+- **Discover** — curated registry of 15+ servers (Filesystem, Git, GitHub, PostgreSQL, SQLite, Redis, Web Fetch, Brave Search, AWS, Kubernetes, Hugging Face, Memory, Sequential Thinking) with search, category filter, and one-click install
+
+### MCP Tool Discovery
+
+Connected tools are searchable and grouped by server in **Settings → Connected Tools**. Hover over any tool to see its description.
 
 ---
 
@@ -358,14 +392,17 @@ See [ROADMAP.md](ROADMAP.md) for the detailed roadmap.
 | Core editor + agent loop | v0.1 | ✅ Done |
 | MCP + Skills system | v0.1 | ✅ Done |
 | LSP IntelliSense | v0.1 | ✅ Done |
-| Git panel | v0.1 | ✅ Done |
+| Git panel + blame | v0.1–v0.2 | ✅ Done |
 | Multi-platform (Win/Mac/Linux/Docker) | v0.1 | ✅ Done |
-| Agent skills marketplace | v0.2 | 🔄 Planned |
-| Docker-in-Docker sandbox | v0.2 | 🔄 Planned |
-| Agent system prompt tuning UI | v0.3 | 📋 Backlog |
-| Multi-tab editing & file diff view | v0.3 | 📋 Backlog |
-| Remote collaboration (multi-user) | v0.4 | 📋 Backlog |
-| Plugin/extension API | v0.5 | 📋 Backlog |
+| Agent Skills Marketplace | v0.2 | ✅ Done |
+| Docker-in-Docker Sandbox | v0.2 | ✅ Done |
+| Agent System Prompt Tuning | v0.2 | ✅ Done |
+| Skill Auto-Application | v0.2 | ✅ Done |
+| Enhanced MCP Tool Discovery | v0.2 | ✅ Done |
+| Editor Polish (themes, keybindings, navigation) | v0.3 | 📋 Planned |
+| Collaboration & Scale (multi-user, sessions) | v0.4 | 📋 Planned |
+| Extensibility Platform (plugins, extensions) | v0.5 | 📋 Planned |
+| Stability & Polish (tests, a11y, i18n) | v1.0 | 📋 Planned |
 
 ---
 
@@ -395,12 +432,10 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.2.1](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.1) | 2026-08-25 | Skills Marketplace, Docker-in-Docker Sandbox, Prompt Tuning UI, Skill Suggestions, Enhanced Tool Discovery |
+| [v0.2.0](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.0) | 2026-08-23 | MCP Discovery, Task History, Model Comparison, Terminal, Git Blame, Code Formatting, Settings UI |
 | [v0.1.6](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.6) | 2026-08-22 | Electron 43 (clears flagged CVEs), Docker slimmed + hardened, automated vuln scanning |
 | [v0.1.5](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.5) | 2026-08-21 | Quick Open (Ctrl+P), file search, @file mentions, 51 builtin skills, md preview |
-| [v0.1.4](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.4) | 2026-08-21 | Workspace picker + runtime switching, Explorer file ops (new/rename/delete) |
-| [v0.1.3](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.3) | 2026-08-21 | Provider connection settings UI — add/edit/test/remove at runtime |
-| [v0.1.2](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.2) | 2026-08-21 | Fix Windows launch crash (ELECTRON_RUN_AS_NODE), EPIPE guard |
-| [v0.1.1](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.1) | 2026-08-20 | Fix packaged app: bundled server, shipped web UI, visible errors |
 | [v0.1.0](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.1.0) | 2026-08-20 | Initial release: Core editor, agent loop, MCP, Skills, LSP, Git panel, Win/Mac/Linux/Docker |
 
 ---
