@@ -140,9 +140,15 @@ jobs:
             const { execSync } = require("child_process");
             const tag = process.env.GITHUB_REF_NAME.replace(/^v/, "");
             const md = fs.readFileSync("CHANGELOG.md", "utf-8");
-            const re = new RegExp("## \\[" + tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|\\n## Unreleased|$)", "m");
-            const m = md.match(re);
-            let body = m ? m[1].trim() : "";
+            const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const headerIdx = md.indexOf("## [" + tag + "]");
+            let body = "";
+            if (headerIdx >= 0) {
+              const afterHeader = md.slice(headerIdx);
+              const nextSection = afterHeader.slice(afterHeader.indexOf("\n") + 1);
+              const endMatch = nextSection.match(/\n## \[|\n## Unreleased/);
+              body = endMatch ? nextSection.slice(0, endMatch.index).trim() : nextSection.trim();
+            }
             if (!body) body = "Release " + tag + ".";
             const header = "# LocalAI Code Editor v" + tag + "\n\n";
             let prev = "0.2.0";
