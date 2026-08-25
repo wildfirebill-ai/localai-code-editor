@@ -730,7 +730,7 @@ export class EditorServer {
   // ---- Update Checker ----
 
   private async checkForUpdates(): Promise<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string }> {
-    const currentVersion = require('../../package.json').version;
+    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.2';
     try {
       const { execSync } = await import('node:child_process');
       const body = execSync('curl -s https://api.github.com/repos/wildfirebill-ai/localai-code-editor/releases/latest', {
