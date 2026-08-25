@@ -12,10 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Agent Conversation Export** — export chat history as Markdown or JSON with download button in the Agent panel
 - **Tool Description Customization** — edit MCP tool descriptions per workspace in Settings; overrides what the agent sees
 - **Agent Token Usage Dashboard** — visual input/output bar with cost estimate, locale-formatted token counts
+- **Update Checker** — check GitHub releases API for new versions with one-click "Check now" button
+- **Auto-update Schedule** — configurable checkbox for startup update checks, persisted in localStorage
+- **Agent Memory** — persistent notes in `.localai/memory/` with categories (General, Build, Config, Findings, Decisions); agent reads these for context during runs
 
 ### Changed
 - Settings panel shows variable reference hints in the Agent Instructions section
 - Connected Tools section now includes editable tool descriptions below the grouped list
+- Settings panel now has Updates and Agent Memory sections
 
 ## [0.2.1] - 2026-08-25
 
