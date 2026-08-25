@@ -123,6 +123,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v8
         with:
@@ -135,6 +137,7 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
+            const { execSync } = require("child_process");
             const tag = process.env.GITHUB_REF_NAME.replace(/^v/, "");
             const md = fs.readFileSync("CHANGELOG.md", "utf-8");
             const re = new RegExp("## \\[" + tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|\\n## Unreleased|$)", "m");
@@ -142,7 +145,9 @@ jobs:
             let body = m ? m[1].trim() : "";
             if (!body) body = "Release " + tag + ".";
             const header = "# LocalAI Code Editor v" + tag + "\n\n";
-            fs.writeFileSync("release-notes.md", header + body + "\n\n**Full Changelog**: https://github.com/" + process.env.GITHUB_REPOSITORY + "/compare/v" + (require("child_process").execSync("git describe --tags --abbrev=0 HEAD~1").toString().trim().replace(/^v/,"") || "0.1.9") + "...v" + tag + "\n");
+            let prev = "0.2.0";
+            try { prev = execSync("git describe --tags --abbrev=0 HEAD~1", { encoding: "utf-8" }).trim().replace(/^v/,""); } catch {}
+            fs.writeFileSync("release-notes.md", header + body + "\n\n**Full Changelog**: https://github.com/" + process.env.GITHUB_REPOSITORY + "/compare/v" + prev + "...v" + tag + "\n");
           '
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
