@@ -5,15 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.1] - 2026-08-23
-
-### Added
-- **Code Formatting** - format code with language-specific rules and instructions for AI agent
-- **Auto-save** - automatically save files after configurable delay
-- **Changes Panel** - show file modifications in sidebar with color coding
-
 ## [0.2.0] - 2026-08-23
-
 
 ### Added
 - **MCP Server Discovery** - browse and install known MCP servers from a curated registry
@@ -30,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **File Change Tracking** - track agent modifications to files with change types
 - **Terminal Integration** - run commands in integrated terminal via WebSocket
 - **Model Comparison** - compare responses from multiple models side-by-side
+- **Code Formatting** - format code with language-specific rules and instructions for AI agent
+- **Auto-save** - automatically save files after configurable delay
+- **Changes Panel** - show file modifications in sidebar with color coding
+- **Editor Settings UI** - auto-save toggle, minimap visibility, font size, word wrap
+- **Keyboard Shortcuts** - reference for all editor commands
+- **Git Blame Annotations** - show who wrote each line
 
 ## [0.1.9] - 2026-08-23
 
