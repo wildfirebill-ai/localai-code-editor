@@ -62,32 +62,22 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Commit History Viewer** | Browse log with author, date, and inline diff preview per commit. | Medium | ✅ Done (v0.2.3) |
 | **Branch Comparison** | Select two branches and diff them side-by-side in the Branches tab. | Low | ✅ Done (v0.2.3) |
 
-### v0.2.4 — Editor Refinements ✅ (Released 2026-08-26)
-
-| Feature | Description | Priority | Status |
-|---------|-------------|----------|--------|
-| **Bracket Matching & Auto-close** | Auto-close brackets, parens, quotes with colorized pair highlighting. | High | ✅ Done (v0.2.4) |
-| **Multi-cursor Editing** | Ctrl+D selects next occurrence, Alt+Click adds cursor. | High | ✅ Done (v0.2.4) |
-| **Code Folding** | Indentation-based folding with hover controls and highlight. | Medium | ✅ Done (v0.2.4) |
-| **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.4) |
-| **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.4) |
-
-### v0.2.5 — Debug Console ✅ (Released 2026-08-26)
-
-| Feature | Description | Priority | Status |
-|---------|-------------|----------|--------|
-| **Debug Console** | Real-time log viewer with level/source filtering, server info, auto-refresh. | High | ✅ Done (v0.2.5) |
-
-### v0.2.6 — MCP Resilience + Find & Replace ✅ (Released 2026-08-26)
+### v0.2.6 — Editor + Debug + MCP Resilience ✅ (Released 2026-08-26)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
 | **Find & Replace** | Ctrl+H panel with regex, case-sensitive, whole-word, replace one/all. | High | ✅ Done (v0.2.6) |
-| **Auto-reconnect** | Reconnect disconnected MCP servers with exponential backoff. | High | ✅ Done (v0.2.6) |
-| **Connection Health Monitor** | Health check all MCP servers, mark disconnected ones. | Medium | ✅ Done (v0.2.6) |
-| **Tool Call Retry** | Retry failed MCP tool calls with backoff and auto-reconnect. | Medium | ✅ Done (v0.2.6) |
+| **Debug Console** | Real-time log viewer with level/source filtering, server info, auto-refresh. | High | ✅ Done (v0.2.6) |
+| **Bracket Matching & Auto-close** | Auto-close brackets, parens, quotes with colorized pair highlighting. | High | ✅ Done (v0.2.6) |
+| **Multi-cursor Editing** | Ctrl+D selects next occurrence, Alt+Click adds cursor. | High | ✅ Done (v0.2.6) |
+| **Code Folding** | Indentation-based folding with hover controls and highlight. | Medium | ✅ Done (v0.2.6) |
+| **MCP Auto-reconnect** | Reconnect disconnected servers with exponential backoff. | High | ✅ Done (v0.2.6) |
+| **MCP Health Check** | Health check all MCP servers, mark disconnected ones. | Medium | ✅ Done (v0.2.6) |
+| **MCP Tool Call Retry** | Retry failed tool calls with backoff and auto-reconnect. | Medium | ✅ Done (v0.2.6) |
 | **MCP Server Logs** | View per-server logs from the MCP host. | Low | ✅ Done (v0.2.6) |
-| **Server Import/Export** | Export MCP server configs as JSON for sharing. | Low | ✅ Done (v0.2.6) |
+| **MCP Config Export** | Export MCP server configs as JSON for sharing. | Low | ✅ Done (v0.2.6) |
+| **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.6) |
+| **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.6) |
 
 ### v0.2.6 — Skills + Theme Switcher
 

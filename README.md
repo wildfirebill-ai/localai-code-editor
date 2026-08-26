@@ -449,9 +449,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| [v0.2.6](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.6) | 2026-08-26 | Find & Replace, MCP Auto-reconnect, Health Check, Tool Retry, Logs, Config Export |
-| [v0.2.5](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.5) | 2026-08-26 | Debug Console, Server Logger, Debug RPCs |
-| [v0.2.4](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.4) | 2026-08-26 | Bracket Matching, Multi-cursor, Code Folding, Encoding Detection, Breadcrumbs |
+| [v0.2.6](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.6) | 2026-08-26 | Find & Replace, Debug Console, Bracket Matching, Multi-cursor, Code Folding, MCP Resilience (includes v0.2.4 + v0.2.5) |
 | [v0.2.3](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.3) | 2026-08-25 | Git Stash, Interactive Commit Editor, Commit History Viewer, Branch Comparison |
 | [v0.2.2](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.2) | 2026-08-25 | Prompt Variables, Chat Export, Tool Description Customization, Token Usage Dashboard |
 | [v0.2.1](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.1) | 2026-08-25 | Skills Marketplace, Docker-in-Docker Sandbox, Prompt Tuning UI, Skill Suggestions, Enhanced Tool Discovery |

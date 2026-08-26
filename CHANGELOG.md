@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.6] - 2026-08-26
+## [0.2.6] - 2026-08-26 (includes v0.2.4 + v0.2.5)
 
 ### Added
 - **Find & Replace** — Ctrl+H panel with regex, case-sensitive, whole-word options, replace one or all
@@ -14,21 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MCP Tool Call Retry** — retry failed tool calls with backoff and auto-reconnect
 - **MCP Server Logs** — view per-server connection and error logs
 - **MCP Config Export** — export MCP server configs as JSON for sharing
-
-## [0.2.5] - 2026-08-26
-
-### Added
 - **Debug Console** — real-time log viewer with level/source filtering, server info panel, and auto-refresh
 - **Debug Logger** — server-side ring buffer capturing console output, uncaught exceptions, and startup events
 - **Debug RPCs** — `debug.logs` (filtered log entries) and `debug.info` (server uptime, memory, PID)
-
-### Fixed
-- File explorer skips symlinks to prevent doubled paths (e.g., `android/android/app`)
-- Server captures uncaught exceptions and unhandled rejections in debug log
-
-## [0.2.4] - 2026-08-26
-
-### Added
 - **Bracket Matching & Auto-close** — auto-close brackets, parens, quotes with colorized pair highlighting
 - **Multi-cursor Editing** — Ctrl+D selects next occurrence, Alt+Click adds cursor
 - **Code Folding** — indentation-based folding with hover controls and highlight
@@ -37,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - File explorer skips symlinks to prevent doubled paths (e.g., `android/android/app`)
+- Server captures uncaught exceptions and unhandled rejections in debug log
 
 ## [0.2.3] - 2026-08-25
 
