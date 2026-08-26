@@ -23,6 +23,10 @@ export function SkillsPanel() {
   };
   useEffect(() => { void load(); }, [client]);
 
+  useEffect(() => {
+    client.request<{ name: string; count: number }[]>('skills.usage').then(setSkillUsage).catch(() => {});
+  }, [client]);
+
   const toggle = async (name: string) => {
     const expanded = !open[name];
     setOpen((o) => ({ ...o, [name]: expanded }));
@@ -41,6 +45,7 @@ export function SkillsPanel() {
   };
 
   const { workspace } = useApp();
+  const [skillUsage, setSkillUsage] = useState<{ name: string; count: number }[]>([]);
   const installedNames = new Set(skills.map((s) => s.name));
 
   // Workspace-aware skill suggestions
@@ -151,7 +156,7 @@ export function SkillsPanel() {
                 <div className="row">
                   <span className={`dot ${s.enabled ? 'ok' : 'bad'}`} />
                   <span className="change-path" onClick={() => void toggle(s.name)}>{s.name}</span>
-                  <span className="muted">{s.source} &middot; {s.category} &middot; v{s.version} &middot; {s.size} ch</span>
+                  <span className="muted">{s.source} &middot; {s.category} &middot; v{s.version} &middot; {s.size} ch{(() => { const u = skillUsage.find((x) => x.name === s.name); return u ? ` · used ${u.count}x` : ''; })()}</span>
                   <button className="btn tiny" onClick={() => void setEnabled(s.name, !s.enabled)}>
                     {s.enabled ? 'Disable' : 'Enable'}
                   </button>

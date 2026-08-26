@@ -194,6 +194,7 @@ export class EditorServer {
         const name = String(args.name ?? '');
         const skill = this.skills.get(name);
         if (!skill) return { toolCallId: '', ok: false, content: `Unknown skill: ${name}` };
+        void this.recordSkillUsage(name);
         return { toolCallId: '', ok: true, content: skill.content };
       },
     };
@@ -530,6 +531,10 @@ export class EditorServer {
           : all;
         return this.sendResult(ws, id, results);
       }
+      case 'skills.usage': {
+        const usage = await this.getSkillUsage();
+        return this.sendResult(ws, id, usage);
+      }
       case 'skills.setEnabled': {
         const ok = this.skills.setEnabled(String(params.name), !!params.enabled);
         if (!ok) throw new Error(`Unknown skill: ${params.name}`);
@@ -761,6 +766,27 @@ export class EditorServer {
     this.lsp = new LanguageServerHost(target, this.config.languageServers);
     console.log(`Workspace switched to ${target}`);
     return { ok: true, workspace: target };
+  }
+
+  private async getSkillUsage(): Promise<{ name: string; count: number }[]> {
+    const usageFile = join(this.config.workspace, '.localai', 'skill-usage.json');
+    try {
+      const raw = await readFile(usageFile, 'utf-8');
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
+  private async recordSkillUsage(name: string): Promise<void> {
+    const usage = await this.getSkillUsage();
+    const existing = usage.find((u) => u.name === name);
+    if (existing) existing.count++;
+    else usage.push({ name, count: 1 });
+    usage.sort((a, b) => b.count - a.count);
+    const dir = join(this.config.workspace, '.localai');
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'skill-usage.json'), JSON.stringify(usage, null, 2), 'utf-8');
   }
 
   private sandboxContainerId: string | null = null;

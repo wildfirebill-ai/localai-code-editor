@@ -583,6 +583,49 @@ export function SettingsPanel() {
         )}
       </div>
 
+      {/* Docker Compose Integration */}
+      <div className="panel-title">Docker Compose</div>
+      <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
+        Generate or manage docker-compose.yml from the editor.
+      </p>
+      <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button className="btn tiny" onClick={async () => {
+          const compose = `services:\n  app:\n    image: node:22-alpine\n    ports:\n      - "3000:3000"\n    volumes:\n      - .:/app\n    working_dir: /app\n    command: npm start`;
+          try {
+            await client.request('fs.write', { path: 'docker-compose.yml', content: compose });
+            setSandboxOutput('Generated docker-compose.yml');
+          } catch (e) { setSandboxOutput(`Error: ${e instanceof Error ? e.message : String(e)}`); }
+        }}>Generate docker-compose.yml</button>
+        {sandbox.running && (
+          <button className="btn tiny" onClick={async () => {
+            const r = await client.request<{ stdout: string }>('sandbox.exec', { command: 'docker compose up -d 2>&1' });
+            setSandboxOutput(r.stdout || 'docker compose up done');
+          }}>Run docker compose up</button>
+        )}
+      </div>
+
+      {/* Container Logs */}
+      <div className="panel-title">Container Logs</div>
+      <p className="muted" style={{ padding: '0 10px', margin: '0 0 4px', fontSize: 11 }}>
+        View logs from running Docker containers.
+      </p>
+      <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button className="btn tiny" onClick={async () => {
+          try {
+            const r = await client.request<{ stdout: string }>('sandbox.exec', { command: 'docker ps --format "{{.Names}}\\t{{.Image}}\\t{{.Status}}" 2>&1' });
+            setSandboxOutput(r.stdout || 'No running containers');
+          } catch (e) { setSandboxOutput(`Error: ${e instanceof Error ? e.message : String(e)}`); }
+        }}>List containers</button>
+        {sandbox.running && (
+          <button className="btn tiny" onClick={async () => {
+            try {
+              const r = await client.request<{ stdout: string }>('sandbox.exec', { command: `docker logs --tail 50 ${sandbox.containerId} 2>&1` });
+              setSandboxOutput(r.stdout || 'No logs');
+            } catch (e) { setSandboxOutput(`Error: ${e instanceof Error ? e.message : String(e)}`); }
+          }}>View sandbox logs</button>
+        )}
+      </div>
+
       <div className="panel-title">Updates</div>
       <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>

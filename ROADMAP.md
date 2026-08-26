@@ -79,7 +79,7 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.6) |
 | **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.6) |
 
-### v0.2.7 — Theme + Skills + Release Notes ✅ (Released 2026-08-26)
+### v0.2.7 — Theme + Skills + Docker ✅ (Released 2026-08-26)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
@@ -87,6 +87,9 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Release Notes in-app** | View release notes in a modal instead of opening browser. | High | ✅ Done (v0.2.7) |
 | **Skill Versioning** | Track skill versions with semver in frontmatter (default: 1.0.0). | Medium | ✅ Done (v0.2.7) |
 | **Skill Search in Agent** | `skills.search` RPC for agent to find skills by keyword. | Medium | ✅ Done (v0.2.7) |
+| **Skill Usage Analytics** | Track skill usage count per workspace, displayed in Skills panel. | Low | ✅ Done (v0.2.7) |
+| **Docker Compose Integration** | Generate docker-compose.yml and run `docker compose up` from Settings. | Medium | ✅ Done (v0.2.7) |
+| **Container Logs Viewer** | List containers and view sandbox logs from Settings. | Medium | ✅ Done (v0.2.7) |
 
 ### v0.2.8 — Performance + Status Bar
 
