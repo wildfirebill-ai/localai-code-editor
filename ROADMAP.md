@@ -79,21 +79,16 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.6) |
 | **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.6) |
 
-### v0.2.6 — Skills + Theme Switcher
+### v0.2.7 — Docker + Terminal + Theme + Skills
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
 | **Theme Switcher** | Light, dark, and high-contrast themes with quick toggle. | High | 📋 Planned |
+| **Terminal in Editor** | Embedded terminal panel with PTY support and split view. | High | 📋 Planned |
 | **Skill Versioning** | Track skill versions with semver in frontmatter. | Medium | 📋 Planned |
 | **Skill Dependencies** | Declare dependencies between skills (e.g., security-check needs auth-flow-audit). | Low | 📋 Planned |
 | **Skill Search in Agent** | Let the agent search for skills by keyword before activating. | Medium | 📋 Planned |
 | **Skill Usage Analytics** | Track which skills are used most frequently per workspace. | Low | 📋 Planned |
-
-### v0.2.7 — Docker + Terminal in Editor
-
-| Feature | Description | Priority | Status |
-|---------|-------------|----------|--------|
-| **Terminal in Editor** | Embedded terminal panel with PTY support and split view. | High | 📋 Planned |
 | **Docker Compose Integration** | Generate/manage docker-compose.yml from the editor. | Medium | 📋 Planned |
 | **Container Logs Viewer** | View logs from running Docker containers in a panel. | Medium | 📋 Planned |
 | **Volume Mount Config** | Configure Docker volume mounts from Settings UI. | Low | 📋 Planned |
