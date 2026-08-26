@@ -818,7 +818,7 @@ export class EditorServer {
       });
       const release = JSON.parse(body);
       const latestVersion = (release.tag_name ?? '').replace(/^v/, '');
-    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.6';
+    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.7';
       if (latestVersion === currentVersion) {
         return { ok: true, message: 'Already up to date', version: currentVersion };
       }
@@ -837,7 +837,7 @@ export class EditorServer {
   }
 
   private async checkForUpdates(): Promise<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string }> {
-    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.3';
+    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.7';
     try {
       const { execSync } = await import('node:child_process');
       const body = execSync('curl -s https://api.github.com/repos/wildfirebill-ai/localai-code-editor/releases/latest', {
