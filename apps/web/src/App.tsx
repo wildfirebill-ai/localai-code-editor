@@ -11,8 +11,9 @@ import { QuickOpen } from './QuickOpen';
 import { EditorPane } from './EditorPane';
 import { StatusBar } from './StatusBar';
 import { ChangesPanel } from './ChangesPanel';
+import { DebugPanel } from './DebugPanel';
 
-type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp' | 'history' | 'changes';
+type SideTab = 'explorer' | 'search' | 'git' | 'skills' | 'mcp' | 'history' | 'changes' | 'debug';
 type Panel = 'editor' | 'chat';
 
 function Workspace() {
@@ -53,6 +54,7 @@ function Workspace() {
           <button title="Agent Skills" className={`icon-btn ${side === 'skills' ? 'active' : ''}`} onClick={() => setSide('skills')}>🧠</button>
           <button title="Task History" className={`icon-btn ${side === 'history' ? 'active' : ''}`} onClick={() => setSide('history')}>📜</button>
           <button title="File Changes" className={`icon-btn ${side === 'changes' ? 'active' : ''}`} onClick={() => setSide('changes')}>📝</button>
+          <button title="Debug Console" className={`icon-btn ${side === 'debug' ? 'active' : ''}`} onClick={() => setSide('debug')}>🐛</button>
           <div className="spacer" />
           <button title="Quick Open (Ctrl+P)" className="icon-btn" onClick={() => setQuickOpen(true)}>⌘</button>
           <button title="Agent panel" className={`icon-btn ${panel === 'chat' ? 'active' : ''}`} onClick={() => setPanel(panel === 'chat' ? 'editor' : 'chat')}>✨</button>
@@ -66,6 +68,7 @@ function Workspace() {
           {side === 'skills' && <SkillsPanel />}
           {side === 'history' && <TaskHistory />}
           {side === 'changes' && <ChangesPanel onOpen={setOpenPath} />}
+          {side === 'debug' && <DebugPanel />}
         </aside>
 
         <main className={`main ${panel === 'chat' ? 'with-chat' : ''}`}>

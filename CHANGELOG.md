@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-08-26
+
+### Added
+- **Debug Console** — real-time log viewer with level/source filtering, server info panel, and auto-refresh
+- **Debug Logger** — server-side ring buffer capturing console output, uncaught exceptions, and startup events
+- **Debug RPCs** — `debug.logs` (filtered log entries) and `debug.info` (server uptime, memory, PID)
+
+### Fixed
+- File explorer skips symlinks to prevent doubled paths (e.g., `android/android/app`)
+- Server captures uncaught exceptions and unhandled rejections in debug log
+
 ## [0.2.4] - 2026-08-26
 
 ### Added

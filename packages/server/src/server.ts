@@ -14,6 +14,7 @@ import { startTask, recordMessage, finishTask, getTaskHistory, getTaskById } fro
 import { SkillStore, defaultUserSkillsDir } from '@localai/skills';
 import { WorkspaceFs } from './fs.js';
 import { resolveWebDist } from './webdist.js';
+import { installConsoleCapture, logStartup, getLogs, getConnectionInfo } from './debug.js';
 import {
   applyLanguageServerOverrides,
   loadLanguageServerOverrides,
@@ -235,6 +236,9 @@ export class EditorServer {
   }
 
   async start(): Promise<void> {
+    installConsoleCapture();
+    logStartup(`Server starting — workspace: ${this.config.workspace}`);
+    logStartup(`Providers: ${this.config.providers.length}, MCP servers: ${Object.keys(this.config.mcpServers).length}, LSP servers: ${this.config.languageServers.length}`);
     await Promise.all(
       Object.entries(this.config.mcpServers).map(([name, cfg]) =>
         this.mcpHost.connect(name, cfg).catch((e) => console.error(`MCP connect ${name} failed:`, e.message)),
@@ -635,6 +639,10 @@ export class EditorServer {
         const result = await this.applyUpdate();
         return this.sendResult(ws, id, result);
       }
+
+      // ---- Debug ----
+      case 'debug.logs': return this.sendResult(ws, id, getLogs({ level: String(params.level ?? ''), source: String(params.source ?? ''), limit: Number(params.limit ?? 100) }));
+      case 'debug.info': return this.sendResult(ws, id, getConnectionInfo());
 
       // ---- Agent Memory ----
       case 'memory.list': {

@@ -72,10 +72,11 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.4) |
 | **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.4) |
 
-### v0.2.5 — MCP Resilience + Find & Replace
+### v0.2.5 — MCP Resilience + Find & Replace + Debug Console ✅ (Released 2026-08-26)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Debug Console** | Real-time log viewer with level/source filtering, server info, auto-refresh. | High | ✅ Done (v0.2.5) |
 | **Find & Replace** | Ctrl+H panel with regex support, match count, and replace all. | High | 📋 Planned |
 | **Auto-reconnect** | Automatically reconnect disconnected MCP servers with backoff. | High | 📋 Planned |
 | **Connection Health Monitor** | Periodic health checks with status indicators per server. | Medium | 📋 Planned |
