@@ -53,9 +53,11 @@ export class WorkspaceFs implements ToolFs {
     const target = path ? this.resolve(path) : this.root;
     const entries = await readdir(target, { withFileTypes: true });
     return entries
-      .filter((e) => !SKIP_DIRS.has(e.name) && !(e.isDirectory() && e.name.startsWith('.')))
+      .filter((e) => !SKIP_DIRS.has(e.name) && !(e.isDirectory() && e.name.startsWith('.')) && !e.isSymbolicLink())
       .map((e) => {
-        const rel = relative(this.root, resolve(target, e.name));
+        // Use join instead of resolve to avoid following symlinks
+        const full = join(target, e.name);
+        const rel = relative(this.root, full);
         const display = rel.split(sep).join('/');
         return e.isDirectory() ? `${display}/` : display;
       });
@@ -125,6 +127,7 @@ export class WorkspaceFs implements ToolFs {
       }
       for (const e of entries) {
         if (out.length >= 5000) return;
+        if (e.isSymbolicLink()) continue;
         const full = join(dir, e.name);
         if (e.isDirectory()) {
           if (!SKIP_DIRS.has(e.name) && !e.name.startsWith('.')) await walk(full);
