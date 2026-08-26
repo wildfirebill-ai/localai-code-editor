@@ -68,7 +68,7 @@
 | **Agent Skills** | 50+ built-in skills; project + user `SKILL.md` files with frontmatter; loaded on demand |
 | **Skills Marketplace** | Installed/Discover tabs with 18 curated skills across 12 categories; one-click install |
 | **Language Servers** | LSP-based completion, hover, diagnostics, definition, references, rename |
-| **Git Panel** | Status, diff, stage/unstage, commit, branch manager, push/pull, log, blame annotations |
+| **Git Panel** | Status, diff, stage/unstage, commit, stash, branch manager, push/pull, log with diff preview, blame |
 | **File Explorer** | Browse, open, edit, save — plus New File/Folder, Rename, and Delete from the sidebar |
 | **Quick Open & Search** | Ctrl+P fuzzy file finder; workspace-wide text search with regex; @file mentions |
 | **Monaco Editor** | The industry-standard editor used by VS Code, running locally |
