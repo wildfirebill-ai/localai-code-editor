@@ -50,12 +50,17 @@ export class WorkspaceFs implements ToolFs {
   }
 
   async listFiles(path: string): Promise<string[]> {
-    const target = path ? this.resolve(path) : this.root;
+    // Use join instead of resolve to avoid following symlinks
+    const target = path ? join(this.root, path) : this.root;
+    // Validate the path is still within workspace
+    const relCheck = relative(this.root, target);
+    if (relCheck.startsWith('..') || isAbsolute(relCheck)) {
+      throw new Error(`Path escapes workspace: ${path}`);
+    }
     const entries = await readdir(target, { withFileTypes: true });
     return entries
       .filter((e) => !SKIP_DIRS.has(e.name) && !(e.isDirectory() && e.name.startsWith('.')) && !e.isSymbolicLink())
       .map((e) => {
-        // Use join instead of resolve to avoid following symlinks
         const full = join(target, e.name);
         const rel = relative(this.root, full);
         const display = rel.split(sep).join('/');
