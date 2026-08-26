@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-08-26
+
+### Added
+- **Bracket Matching & Auto-close** — auto-close brackets, parens, quotes with colorized pair highlighting
+- **Multi-cursor Editing** — Ctrl+D selects next occurrence, Alt+Click adds cursor
+- **Code Folding** — indentation-based folding with hover controls and highlight
+- **File Encoding Detection** — show file encoding in editor tab
+- **Breadcrumbs** — enabled by default in Monaco editor
+
+### Fixed
+- File explorer skips symlinks to prevent doubled paths (e.g., `android/android/app`)
+
 ## [0.2.3] - 2026-08-25
 
 ### Added

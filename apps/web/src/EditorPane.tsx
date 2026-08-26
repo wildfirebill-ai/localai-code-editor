@@ -17,6 +17,7 @@ export function EditorPane({ path }: { path: string }) {
   const [loaded, setLoaded] = useState(false);
   const [binary, setBinary] = useState(false);
   const [size, setSize] = useState(0);
+  const [encoding, setEncoding] = useState('utf-8');
   const [preview, setPreview] = useState(false);
   const uriRef = useRef<string | null>(null);
   /** Latest dirty state for effects that must not clobber user edits. */
@@ -47,9 +48,11 @@ export function EditorPane({ path }: { path: string }) {
     setLoaded(false);
     setBinary(false);
     client
-      .request<string>('fs.read', { path })
-      .then(async (c) => {
+      .request<{ content: string; encoding: string } | string>('fs.read', { path })
+      .then(async (result) => {
         if (cancelled) return;
+        const c = typeof result === 'string' ? result : result.content;
+        const enc = typeof result === 'string' ? 'utf-8' : (result.encoding ?? 'utf-8');
         if (c.includes('\u0000')) {
           setBinary(true);
           setLoaded(true);
@@ -57,6 +60,7 @@ export function EditorPane({ path }: { path: string }) {
         }
         setContent(c);
         setSavedContent(c);
+        setEncoding(enc);
         setLoaded(true);
         // The Monaco model for this path resolves to a `file://`-like uri;
         // derive it and open it in the matching language server.
@@ -85,6 +89,30 @@ export function EditorPane({ path }: { path: string }) {
 
   const handleMount: OnMount = (editor, monaco) => {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => void save());
+
+    // Bracket matching & auto-close
+    editor.updateOptions({
+      autoClosingBrackets: 'always',
+      autoClosingQuotes: 'always',
+      autoSurround: 'languageDefined',
+      bracketPairColorization: { enabled: true },
+      guides: { bracketPairs: true, indentation: true },
+    });
+
+    // Multi-cursor: Ctrl+D selects next occurrence, Alt+Click adds cursor
+    editor.updateOptions({
+      multiCursorModifier: 'ctrlCmd',
+    });
+
+    // Code folding
+    editor.updateOptions({
+      folding: true,
+      foldingStrategy: 'indentation',
+      showFoldingControls: 'mouseover',
+      foldingHighlight: true,
+    });
+
+    // Breadcrumbs — enabled by default in Monaco; configure via editor options if needed
   };
 
   const language = path ? (languageForFile(path) ?? guessLanguage(path)) : undefined;
@@ -98,7 +126,7 @@ export function EditorPane({ path }: { path: string }) {
             {path}
             {dirty && <span title="Unsaved changes" style={{ color: '#e5c07b', marginLeft: 6 }}>●</span>}
           </span>
-          <span className="muted">{language}</span>
+          <span className="muted">{language} · {encoding}</span>
           {isMarkdown && (
             <button className={`btn tiny ${preview ? '' : 'subtle'}`} onClick={() => setPreview((p) => !p)}>
               {preview ? 'Edit' : 'Preview'}

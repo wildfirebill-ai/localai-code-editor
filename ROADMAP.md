@@ -62,15 +62,15 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Commit History Viewer** | Browse log with author, date, and inline diff preview per commit. | Medium | ✅ Done (v0.2.3) |
 | **Branch Comparison** | Select two branches and diff them side-by-side in the Branches tab. | Low | ✅ Done (v0.2.3) |
 
-### v0.2.4 — Editor Refinements
+### v0.2.4 — Editor Refinements ✅ (Released 2026-08-26)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
-| **Bracket Matching & Auto-close** | Match brackets, parens, quotes; auto-close pairs. | High | 📋 Planned |
-| **Multi-cursor Editing** | Ctrl+D select next occurrence, Alt+Click add cursor. | High | 📋 Planned |
-| **Code Folding** | Fold/unfold code blocks with gutter indicators. | Medium | 📋 Planned |
-| **File Encoding Detection** | Auto-detect file encoding (UTF-8, UTF-16, Latin-1) on open. | Low | 📋 Planned |
-| **Breadcrumbs** | Show file path + symbol hierarchy above the editor. | Low | 📋 Planned |
+| **Bracket Matching & Auto-close** | Auto-close brackets, parens, quotes with colorized pair highlighting. | High | ✅ Done (v0.2.4) |
+| **Multi-cursor Editing** | Ctrl+D selects next occurrence, Alt+Click adds cursor. | High | ✅ Done (v0.2.4) |
+| **Code Folding** | Indentation-based folding with hover controls and highlight. | Medium | ✅ Done (v0.2.4) |
+| **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.4) |
+| **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.4) |
 
 ### v0.2.5 — MCP Resilience
 
