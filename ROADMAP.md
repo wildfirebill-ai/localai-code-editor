@@ -72,48 +72,59 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **File Encoding Detection** | Show file encoding in editor tab (UTF-8 default). | Low | ✅ Done (v0.2.4) |
 | **Breadcrumbs** | Enabled by default in Monaco editor. | Low | ✅ Done (v0.2.4) |
 
-### v0.2.5 — MCP Resilience
+### v0.2.5 — MCP Resilience + Find & Replace
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Find & Replace** | Ctrl+H panel with regex support, match count, and replace all. | High | 📋 Planned |
 | **Auto-reconnect** | Automatically reconnect disconnected MCP servers with backoff. | High | 📋 Planned |
 | **Connection Health Monitor** | Periodic health checks with status indicators per server. | Medium | 📋 Planned |
 | **Tool Call Retry** | Retry failed MCP tool calls with exponential backoff. | Medium | 📋 Planned |
 | **MCP Server Logs** | View server stdout/stderr in a collapsible panel. | Low | 📋 Planned |
 | **Server Import/Export** | Export/import MCP server configs as JSON for sharing. | Low | 📋 Planned |
 
-### v0.2.6 — Skills System
+### v0.2.6 — Skills + Theme Switcher
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Theme Switcher** | Light, dark, and high-contrast themes with quick toggle. | High | 📋 Planned |
 | **Skill Versioning** | Track skill versions with semver in frontmatter. | Medium | 📋 Planned |
 | **Skill Dependencies** | Declare dependencies between skills (e.g., security-check needs auth-flow-audit). | Low | 📋 Planned |
 | **Skill Search in Agent** | Let the agent search for skills by keyword before activating. | Medium | 📋 Planned |
 | **Skill Usage Analytics** | Track which skills are used most frequently per workspace. | Low | 📋 Planned |
 
-### v0.2.7 — Docker & Deployment
+### v0.2.7 — Docker + Terminal in Editor
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Terminal in Editor** | Embedded terminal panel with PTY support and split view. | High | 📋 Planned |
 | **Docker Compose Integration** | Generate/manage docker-compose.yml from the editor. | Medium | 📋 Planned |
 | **Container Logs Viewer** | View logs from running Docker containers in a panel. | Medium | 📋 Planned |
 | **Volume Mount Config** | Configure Docker volume mounts from Settings UI. | Low | 📋 Planned |
 | **Image Layer Inspector** | View Docker image layers and sizes for optimization. | Low | 📋 Planned |
 
-### v0.2.8 — Performance
+### v0.2.8 — Performance + Status Bar
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Cursor Position in Status Bar** | Show `Ln X, Col Y` in the status bar. | High | 📋 Planned |
+| **Word Wrap Quick Toggle** | Click in status bar to cycle wrap modes. | Medium | 📋 Planned |
+| **Undo/Redo Buttons** | Visual undo/redo in status bar. | Low | 📋 Planned |
+| **Minimap Quick Toggle** | Click in status bar to toggle minimap. | Low | 📋 Planned |
 | **Lazy File Loading** | Only load visible editor content; lazy-load large files. | High | 📋 Planned |
 | **Web Worker Offloading** | Move heavy processing (linting, search) to web workers. | Medium | 📋 Planned |
 | **Virtual File Tree** | Virtualize the file explorer for workspaces with 10K+ files. | Medium | 📋 Planned |
 | **Bundle Analysis** | Built-in bundle size analysis and tree-shaking recommendations. | Low | 📋 Planned |
 | **Memory Usage Monitor** | Show editor and server memory usage in the status bar. | Low | 📋 Planned |
 
-### v0.2.9 — UX Polish
+### v0.2.9 — UX Polish + Split Editor
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
+| **Split Editor** | Side-by-side file editing with independent cursors. | High | 📋 Planned |
+| **File Diff View** | Compare two files side-by-side with inline diff. | Medium | 📋 Planned |
+| **Auto-format on Save** | Run formatter automatically when saving files. | Medium | 📋 Planned |
+| **Recent Files** | Quick access to recently opened files. | Medium | 📋 Planned |
 | **Keyboard Shortcuts Reference** | Overlay showing all available shortcuts by category. | Medium | 📋 Planned |
 | **Onboarding Wizard** | First-run setup guide: pick workspace, connect LLM, enable skills. | Medium | 📋 Planned |
 | **Tooltips on Hover** | Contextual tooltips for all buttons and controls. | Low | 📋 Planned |
@@ -132,6 +143,9 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Advanced Git Operations** | Interactive rebase, cherry-pick, stash, submodule support | Medium | ⬜ Planned |
 | **Workspace Symbols** | Go-to-symbol across workspace (LSP-powered) | Medium | ⬜ Planned |
 | **Refactoring Actions** | Extract function, rename, move file (LSP code actions) | Medium | ⬜ Planned |
+| **Agent Cost History** | Track cumulative token cost across runs with per-run breakdown. | Medium | 📋 Planned |
+| **Agent Run Replay** | Replay a previous agent run step-by-step for debugging. | Medium | 📋 Planned |
+| **Agent Context Window** | Show how much context the agent has used vs. model limit. | Medium | 📋 Planned |
 | **Custom Keybindings** | User-configurable keyboard shortcuts | Low | ✅ Done (v0.2.0) |
 | **Theme Customization** | Custom color themes, font ligatures, editor settings UI | Low | ✅ Done (v0.2.0) |
 
