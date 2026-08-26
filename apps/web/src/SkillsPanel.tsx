@@ -151,7 +151,7 @@ export function SkillsPanel() {
                 <div className="row">
                   <span className={`dot ${s.enabled ? 'ok' : 'bad'}`} />
                   <span className="change-path" onClick={() => void toggle(s.name)}>{s.name}</span>
-                  <span className="muted">{s.source} &middot; {s.category} &middot; {s.size} ch</span>
+                  <span className="muted">{s.source} &middot; {s.category} &middot; v{s.version} &middot; {s.size} ch</span>
                   <button className="btn tiny" onClick={() => void setEnabled(s.name, !s.enabled)}>
                     {s.enabled ? 'Disable' : 'Enable'}
                   </button>

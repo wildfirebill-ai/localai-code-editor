@@ -123,6 +123,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lastCost, setLastCost] = useState<number | null>(null);
   const [abort] = useState(() => new AbortController());
 
+  // Apply theme to document root
+  useEffect(() => {
+    const root = document.documentElement;
+    const theme = settings.theme;
+    if (theme === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    } else {
+      root.setAttribute('data-theme', theme);
+    }
+  }, [settings.theme]);
+
   useEffect(() => {
     client
       .connect()

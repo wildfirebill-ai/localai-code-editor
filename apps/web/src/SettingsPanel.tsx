@@ -42,6 +42,8 @@ export function SettingsPanel() {
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(() => localStorage.getItem('localai.autoCheckUpdates') !== '0');
   const [updating, setUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState('');
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [releaseNotes, setReleaseNotes] = useState('');
   const [memoryNotes, setMemoryNotes] = useState<{ key: string; content: string; category: string; updated: string }[]>([]);
   const [memoryKey, setMemoryKey] = useState('');
   const [memoryContent, setMemoryContent] = useState('');
@@ -247,6 +249,17 @@ export function SettingsPanel() {
     if (autoCheckUpdates) void checkUpdates();
   }, [client, autoCheckUpdates]);
 
+  const fetchReleaseNotes = async () => {
+    try {
+      const result = await client.request<{ notes: string }>('update.releaseNotes', { version: updateInfo?.latestVersion });
+      setReleaseNotes(result.notes);
+      setShowReleaseNotes(true);
+    } catch {
+      // Fallback: open in browser
+      if (updateInfo?.releaseUrl) window.open(updateInfo.releaseUrl, '_blank');
+    }
+  };
+
   const applyUpdate = async () => {
     setUpdating(true);
     setUpdateMsg('Updating...');
@@ -354,6 +367,19 @@ export function SettingsPanel() {
 
       <div className="panel-title">Editor Settings</div>
       <div className="editor-settings" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="muted" style={{ fontSize: 11 }}>Theme:</span>
+          <select
+            value={settings.theme}
+            onChange={(e) => updateSettings('theme', e.target.value as typeof settings.theme)}
+            style={{ fontSize: 11 }}
+          >
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="high-contrast">High Contrast</option>
+            <option value="system">System</option>
+          </select>
+        </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
           <input type="checkbox" checked={settings.autoSave} onChange={(e) => updateSettings('autoSave', e.target.checked)} />
           Auto-save files
@@ -588,11 +614,30 @@ export function SettingsPanel() {
             <button className="btn primary" disabled={updating} onClick={applyUpdate}>
               {updating ? 'Updating…' : `Update to v${updateInfo.latestVersion}`}
             </button>
-            {updateInfo.releaseUrl && (
-              <a href={updateInfo.releaseUrl} target="_blank" rel="noopener noreferrer" className="btn tiny" style={{ background: 'transparent', color: 'var(--fg-muted)' }}>
-                Release notes
-              </a>
-            )}
+            <button className="btn tiny" onClick={fetchReleaseNotes}>Release notes</button>
+          </div>
+        )}
+
+        {/* Release Notes Modal */}
+        {showReleaseNotes && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowReleaseNotes(false)}>
+            <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>Release Notes — v{updateInfo?.latestVersion}</div>
+                <button className="btn tiny" onClick={() => setShowReleaseNotes(false)}>×</button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                {releaseNotes || 'Loading release notes…'}
+              </div>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                {updateInfo?.releaseUrl && (
+                  <a href={updateInfo.releaseUrl} target="_blank" rel="noopener noreferrer" className="btn tiny" style={{ background: 'transparent', color: 'var(--fg-muted)' }}>
+                    Open on GitHub
+                  </a>
+                )}
+                <button className="btn tiny" onClick={() => setShowReleaseNotes(false)}>Close</button>
+              </div>
+            </div>
           </div>
         )}
         {updateMsg && <p className="muted" style={{ fontSize: 11, margin: 0 }}>{updateMsg}</p>}

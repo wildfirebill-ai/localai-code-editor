@@ -522,6 +522,14 @@ export class EditorServer {
         if (!s) throw new Error(`Unknown skill: ${params.name}`);
         return this.sendResult(ws, id, s);
       }
+      case 'skills.search': {
+        const query = String(params.query ?? '').toLowerCase();
+        const all = this.skills.list();
+        const results = query
+          ? all.filter((s) => s.name.toLowerCase().includes(query) || s.description.toLowerCase().includes(query) || s.category.toLowerCase().includes(query))
+          : all;
+        return this.sendResult(ws, id, results);
+      }
       case 'skills.setEnabled': {
         const ok = this.skills.setEnabled(String(params.name), !!params.enabled);
         if (!ok) throw new Error(`Unknown skill: ${params.name}`);
@@ -644,6 +652,10 @@ export class EditorServer {
         const result = await this.applyUpdate();
         return this.sendResult(ws, id, result);
       }
+      case 'update.releaseNotes': {
+        const result = await this.getReleaseNotes(String(params.version ?? ''));
+        return this.sendResult(ws, id, result);
+      }
 
       // ---- Debug ----
       case 'debug.logs': return this.sendResult(ws, id, getLogs({ level: String(params.level ?? ''), source: String(params.source ?? ''), limit: Number(params.limit ?? 100) }));
@@ -754,6 +766,21 @@ export class EditorServer {
   private sandboxContainerId: string | null = null;
 
   // ---- Update Checker ----
+
+  private async getReleaseNotes(version: string): Promise<{ notes: string }> {
+    try {
+      const { execSync } = await import('node:child_process');
+      const tag = version.startsWith('v') ? version : `v${version}`;
+      const body = execSync(`curl -s https://api.github.com/repos/wildfirebill-ai/localai-code-editor/releases/tags/${tag}`, {
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      const release = JSON.parse(body);
+      return { notes: release.body ?? 'No release notes available.' };
+    } catch {
+      return { notes: 'Could not fetch release notes.' };
+    }
+  }
 
   private async applyUpdate(): Promise<{ ok: boolean; message: string; version?: string }> {
     try {

@@ -4,7 +4,7 @@
  */
 
 export interface EditorSettings {
-  theme: 'dark' | 'light' | 'system';
+  theme: 'dark' | 'light' | 'high-contrast' | 'system';
   lastOpenFile: string;
   recentWorkspaces: string[];
   fontSize: number;

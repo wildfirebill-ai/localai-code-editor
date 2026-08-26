@@ -111,6 +111,7 @@ export interface SkillSummary {
   name: string;
   description: string;
   category: string;
+  version: string;
   source: 'builtin' | 'project' | 'user';
   path: string;
   enabled: boolean;

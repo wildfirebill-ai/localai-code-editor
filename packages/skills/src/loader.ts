@@ -66,11 +66,13 @@ export async function loadSkillsFromDir(
       const name = String(frontmatter.name ?? dirName);
       const description = String(frontmatter.description ?? '');
       const category = String(frontmatter.category ?? 'other');
+      const version = String(frontmatter.version ?? '1.0.0');
       const displayPath = relative(projectRoot, skillFile).split(sep).join('/');
       skills.push({
         name,
         description,
         category,
+        version,
         content: body.trim(),
         source,
         path: displayPath.startsWith('..') ? skillFile : displayPath,

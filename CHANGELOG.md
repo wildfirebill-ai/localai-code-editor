@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2026-08-26
+
+### Added
+- **Theme Switcher** — light, dark, high-contrast, and system themes in Settings
+- **Release Notes in-app** — view release notes in a modal instead of opening browser
+- **Skill Versioning** — track skill versions with semver in frontmatter (default: 1.0.0)
+- **Skill Search in Agent** — `skills.search` RPC for agent to find skills by keyword
+
+### Changed
+- Settings panel now shows theme selector dropdown
+- Skills panel shows version number next to each skill
+- Update checker shows release notes in a modal with "Open on GitHub" link
+
 ## [0.2.6] - 2026-08-26 (includes v0.2.4 + v0.2.5)
 
 ### Added

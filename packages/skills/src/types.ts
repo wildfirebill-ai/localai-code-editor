@@ -6,6 +6,7 @@ export interface SkillFrontmatter {
   name?: string;
   description?: string;
   category?: string;
+  version?: string;
   /** Any other frontmatter fields, kept verbatim. */
   [key: string]: unknown;
 }
@@ -16,6 +17,7 @@ export interface Skill {
   name: string;
   description: string;
   category: string;
+  version: string;
   /** Full markdown body (the skill's instructions/content). */
   content: string;
   /** Which directory this came from. */
@@ -30,6 +32,7 @@ export interface SkillSummary {
   name: string;
   description: string;
   category: string;
+  version: string;
   source: SkillSource;
   path: string;
   enabled: boolean;
