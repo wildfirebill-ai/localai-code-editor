@@ -6,7 +6,7 @@ import type { ToolFs } from '@localai/agent';
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'dist-server', 'build', 'out', '.next',
   'coverage', '.pnpm-store', '__pycache__', '.venv', 'venv', '.idea', '.vscode',
-  'release', 'target', '.cache', '.localai',
+  'release', 'target', '.cache', '.localai', '.dart_tool', 'Pods', '.gradle',
 ]);
 
 /** Extensions treated as binary (never searched / never opened as text). */
@@ -52,11 +52,13 @@ export class WorkspaceFs implements ToolFs {
   async listFiles(path: string): Promise<string[]> {
     const target = path ? this.resolve(path) : this.root;
     const entries = await readdir(target, { withFileTypes: true });
-    return entries.map((e) => {
-      const rel = relative(this.root, resolve(target, e.name));
-      const display = rel.split(sep).join('/');
-      return e.isDirectory() ? `${display}/` : display;
-    });
+    return entries
+      .filter((e) => !SKIP_DIRS.has(e.name) && !(e.isDirectory() && e.name.startsWith('.')))
+      .map((e) => {
+        const rel = relative(this.root, resolve(target, e.name));
+        const display = rel.split(sep).join('/');
+        return e.isDirectory() ? `${display}/` : display;
+      });
   }
 
   async pathExists(path: string): Promise<boolean> {
