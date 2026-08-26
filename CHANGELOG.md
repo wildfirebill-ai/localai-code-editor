@@ -12,10 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Release Notes in-app** — view release notes in a modal instead of opening browser
 - **Skill Versioning** — track skill versions with semver in frontmatter (default: 1.0.0)
 - **Skill Search in Agent** — `skills.search` RPC for agent to find skills by keyword
+- **Skill Usage Analytics** — track skill usage count per workspace, displayed in Skills panel
+- **Docker Compose Integration** — generate docker-compose.yml and run `docker compose up` from Settings
+- **Container Logs Viewer** — list Docker containers and view sandbox logs from Settings
 
 ### Changed
 - Settings panel now shows theme selector dropdown
-- Skills panel shows version number next to each skill
+- Skills panel shows version number and usage count next to each skill
 - Update checker shows release notes in a modal with "Open on GitHub" link
 
 ## [0.2.6] - 2026-08-26 (includes v0.2.4 + v0.2.5)
