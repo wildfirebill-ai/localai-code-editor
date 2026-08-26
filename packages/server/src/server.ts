@@ -631,6 +631,10 @@ export class EditorServer {
         const result = await this.checkForUpdates();
         return this.sendResult(ws, id, result);
       }
+      case 'update.apply': {
+        const result = await this.applyUpdate();
+        return this.sendResult(ws, id, result);
+      }
 
       // ---- Agent Memory ----
       case 'memory.list': {
@@ -738,8 +742,36 @@ export class EditorServer {
 
   // ---- Update Checker ----
 
+  private async applyUpdate(): Promise<{ ok: boolean; message: string; version?: string }> {
+    try {
+      const { execSync } = await import('node:child_process');
+      // Get latest release info
+      const body = execSync('curl -s https://api.github.com/repos/wildfirebill-ai/localai-code-editor/releases/latest', {
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      const release = JSON.parse(body);
+      const latestVersion = (release.tag_name ?? '').replace(/^v/, '');
+      const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.3';
+      if (latestVersion === currentVersion) {
+        return { ok: true, message: 'Already up to date', version: currentVersion };
+      }
+      // Pull latest from git (for source installs)
+      try {
+        execSync('git pull origin main', { cwd: this.config.workspace, encoding: 'utf-8', timeout: 30000 });
+        execSync('pnpm install --frozen-lockfile', { cwd: this.config.workspace, encoding: 'utf-8', timeout: 60000 });
+        execSync('pnpm build', { cwd: this.config.workspace, encoding: 'utf-8', timeout: 120000 });
+        return { ok: true, message: `Updated to v${latestVersion}. Restart to apply.`, version: latestVersion };
+      } catch {
+        return { ok: false, message: `Update available (v${latestVersion}) but auto-update failed. Pull manually: git pull origin main && pnpm install && pnpm build`, version: latestVersion };
+      }
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
   private async checkForUpdates(): Promise<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string }> {
-    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.2';
+    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.3';
     try {
       const { execSync } = await import('node:child_process');
       const body = execSync('curl -s https://api.github.com/repos/wildfirebill-ai/localai-code-editor/releases/latest', {

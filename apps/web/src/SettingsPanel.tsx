@@ -40,6 +40,8 @@ export function SettingsPanel() {
   const [sysSaved, setSysSaved] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{ currentVersion: string; latestVersion: string; hasUpdate: boolean; releaseUrl?: string } | null>(null);
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(() => localStorage.getItem('localai.autoCheckUpdates') !== '0');
+  const [updating, setUpdating] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState('');
   const [memoryNotes, setMemoryNotes] = useState<{ key: string; content: string; category: string; updated: string }[]>([]);
   const [memoryKey, setMemoryKey] = useState('');
   const [memoryContent, setMemoryContent] = useState('');
@@ -244,6 +246,21 @@ export function SettingsPanel() {
   useEffect(() => {
     if (autoCheckUpdates) void checkUpdates();
   }, [client, autoCheckUpdates]);
+
+  const applyUpdate = async () => {
+    setUpdating(true);
+    setUpdateMsg('Updating...');
+    try {
+      const result = await client.request<{ ok: boolean; message: string; version?: string }>('update.apply');
+      setUpdateMsg(result.message);
+      if (result.ok && result.version) {
+        setUpdateInfo((prev) => prev ? { ...prev, hasUpdate: false, latestVersion: result.version! } : null);
+      }
+    } catch (e) {
+      setUpdateMsg(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    setUpdating(false);
+  };
 
   // ---- Agent Memory ----
   const loadMemory = async () => {
@@ -566,11 +583,19 @@ export function SettingsPanel() {
             </span>
           )}
         </div>
-        {updateInfo?.hasUpdate && updateInfo.releaseUrl && (
-          <a href={updateInfo.releaseUrl} target="_blank" rel="noopener noreferrer" className="btn tiny" style={{ alignSelf: 'flex-start' }}>
-            View release →
-          </a>
+        {updateInfo?.hasUpdate && (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <button className="btn primary" disabled={updating} onClick={applyUpdate}>
+              {updating ? 'Updating…' : `Update to v${updateInfo.latestVersion}`}
+            </button>
+            {updateInfo.releaseUrl && (
+              <a href={updateInfo.releaseUrl} target="_blank" rel="noopener noreferrer" className="btn tiny" style={{ background: 'transparent', color: 'var(--fg-muted)' }}>
+                Release notes
+              </a>
+            )}
+          </div>
         )}
+        {updateMsg && <p className="muted" style={{ fontSize: 11, margin: 0 }}>{updateMsg}</p>}
       </div>
 
       <div className="panel-title">Agent Memory</div>
