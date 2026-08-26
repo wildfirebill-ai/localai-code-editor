@@ -765,7 +765,7 @@ export class EditorServer {
       });
       const release = JSON.parse(body);
       const latestVersion = (release.tag_name ?? '').replace(/^v/, '');
-      const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.3';
+    const currentVersion = process.env.LOCALAI_VERSION ?? '0.2.6';
       if (latestVersion === currentVersion) {
         return { ok: true, message: 'Already up to date', version: currentVersion };
       }
