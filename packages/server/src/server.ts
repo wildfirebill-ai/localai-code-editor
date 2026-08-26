@@ -502,6 +502,15 @@ export class EditorServer {
       case 'git.pull': return this.sendResult(ws, id, await this.git.pull());
       case 'git.log': return this.sendResult(ws, id, await this.git.log(Number(params.limit ?? 50)));
 
+      // ---- Stash ----
+      case 'git.stash': return this.sendResult(ws, id, await this.git.stash(String(params.message ?? undefined)));
+      case 'git.stashPop': return this.sendResult(ws, id, await this.git.stashPop());
+      case 'git.stashList': return this.sendResult(ws, id, await this.git.stashList());
+      case 'git.stashDrop': return this.sendResult(ws, id, await this.git.stashDrop(Number(params.index ?? 0)));
+
+      // ---- Branch diff ----
+      case 'git.diffBranches': return this.sendResult(ws, id, await this.git.diffBranches(String(params.from), String(params.to)));
+
       // ---- Skills ----
       case 'skills.list': return this.sendResult(ws, id, this.skills.list());
       case 'skills.read': {

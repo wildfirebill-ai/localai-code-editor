@@ -184,6 +184,66 @@ export class GitService {
     const branch = await this.git.revparse(['--abbrev-ref', 'HEAD']);
     return branch.trim();
   }
+
+  // ---- Stash ----
+
+  async stash(message?: string): Promise<{ ok: boolean; message: string }> {
+    try {
+      const args = ['push'];
+      if (message) args.push('-m', message);
+      const result = await this.git.stash(args);
+      return { ok: true, message: result ?? 'Changes stashed' };
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  async stashPop(): Promise<{ ok: boolean; message: string }> {
+    try {
+      const result = await this.git.stash(['pop']);
+      return { ok: true, message: result ?? 'Stash applied' };
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  async stashList(): Promise<{ index: number; message: string; hash: string }[]> {
+    try {
+      const result = await this.git.stash(['list']);
+      if (!result.trim()) return [];
+      return result.trim().split('\n').map((line, i) => {
+        const hashMatch = line.match(/^stash@\{(\d+)\}.*?\): (.*?)$/);
+        return {
+          index: i,
+          hash: hashMatch?.[1] ?? String(i),
+          message: hashMatch?.[2] ?? line,
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  async stashDrop(index: number): Promise<{ ok: boolean; message: string }> {
+    try {
+      await this.git.stash(['drop', `stash@{${index}}`]);
+      return { ok: true, message: `Stash@{${index}} dropped` };
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  // ---- Branch diff ----
+
+  async diffBranches(from: string, to: string): Promise<Record<string, FileDiff>> {
+    try {
+      const raw = await this.git.diff([from, to]);
+      if (!raw.trim()) return {};
+      return splitDiffs(raw);
+    } catch {
+      return {};
+    }
+  }
 }
 
 function parseDiff(raw: string): DiffLine[] {

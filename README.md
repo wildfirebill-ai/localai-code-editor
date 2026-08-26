@@ -449,6 +449,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.2.3](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.3) | 2026-08-25 | Git Stash, Interactive Commit Editor, Commit History Viewer, Branch Comparison |
 | [v0.2.2](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.2) | 2026-08-25 | Prompt Variables, Chat Export, Tool Description Customization, Token Usage Dashboard |
 | [v0.2.1](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.1) | 2026-08-25 | Skills Marketplace, Docker-in-Docker Sandbox, Prompt Tuning UI, Skill Suggestions, Enhanced Tool Discovery |
 | [v0.2.0](https://github.com/wildfirebill-ai/localai-code-editor/releases/tag/v0.2.0) | 2026-08-23 | MCP Discovery, Task History, Model Comparison, Terminal, Git Blame, Code Formatting, Settings UI |

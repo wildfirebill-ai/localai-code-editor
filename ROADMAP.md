@@ -53,14 +53,14 @@ Build the **best local-first AI code editor** that respects your privacy, works 
 | **Tool Description Customization** | Edit MCP tool descriptions in Settings; saved per workspace. | Low | ✅ Done (v0.2.2) |
 | **Agent Token Usage Dashboard** | Visual breakdown with input/output bar, cost estimate, and locale-formatted counts. | Medium | ✅ Done (v0.2.2) |
 
-### v0.2.3 — Git Enhancements
+### v0.2.3 — Git Enhancements ✅ (Released 2026-08-25)
 
 | Feature | Description | Priority | Status |
 |---------|-------------|----------|--------|
-| **Stash Support** | Stash/unstash changes from the Git panel. | High | 📋 Planned |
-| **Interactive Commit Editor** | Edit commit message with Monaco in a modal before committing. | Medium | 📋 Planned |
-| **Commit History Viewer** | Browse commit log with diff preview in the Git panel. | Medium | 📋 Planned |
-| **Branch Comparison** | Diff two branches side-by-side from the Git panel. | Low | 📋 Planned |
+| **Stash Support** | Stash, pop, list, and drop from the Git panel with message support. | High | ✅ Done (v0.2.3) |
+| **Interactive Commit Editor** | Modal editor for commit messages with char count and preview. | Medium | ✅ Done (v0.2.3) |
+| **Commit History Viewer** | Browse log with author, date, and inline diff preview per commit. | Medium | ✅ Done (v0.2.3) |
+| **Branch Comparison** | Select two branches and diff them side-by-side in the Branches tab. | Low | ✅ Done (v0.2.3) |
 
 ### v0.2.4 — Editor Refinements
 

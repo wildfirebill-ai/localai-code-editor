@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-08-25
+
+### Added
+- **Git Stash** — stash, pop, list, and drop from the Git panel with optional message
+- **Interactive Commit Editor** — modal editor for commit messages with character count
+- **Commit History Viewer** — browse log with author, date, and inline diff preview per commit
+- **Branch Comparison** — select two branches and diff them side-by-side in the Branches tab
+
+### Fixed
+- File explorer now skips `.dart_tool`, `Pods`, `.gradle` directories to prevent symlink recursion errors
+
 ## [0.2.2] - 2026-08-25
 
 ### Added
