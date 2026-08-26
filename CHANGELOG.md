@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-08-26
+
+### Added
+- **Find & Replace** — Ctrl+H panel with regex, case-sensitive, whole-word options, replace one or all
+- **MCP Auto-reconnect** — reconnect disconnected servers with exponential backoff
+- **MCP Health Check** — check all MCP server connections and mark disconnected ones
+- **MCP Tool Call Retry** — retry failed tool calls with backoff and auto-reconnect
+- **MCP Server Logs** — view per-server connection and error logs
+- **MCP Config Export** — export MCP server configs as JSON for sharing
+
 ## [0.2.5] - 2026-08-26
 
 ### Added

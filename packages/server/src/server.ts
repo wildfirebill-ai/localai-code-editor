@@ -611,6 +611,11 @@ export class EditorServer {
       case 'mcp.status': return this.sendResult(ws, id, this.mcpHost.status());
       case 'mcp.listTools': return this.sendResult(ws, id, this.mcpHost.listTools());
       case 'mcp.callTool': return this.sendResult(ws, id, await this.mcpHost.callTool(String(params.name), (params.args ?? {}) as Record<string, unknown>));
+      case 'mcp.callToolRetry': return this.sendResult(ws, id, await this.mcpHost.callToolWithRetry(String(params.name), (params.args ?? {}) as Record<string, unknown>, Number(params.retries ?? 2)));
+      case 'mcp.healthCheck': return this.sendResult(ws, id, await this.mcpHost.healthCheck());
+      case 'mcp.autoReconnect': { await this.mcpHost.autoReconnect(); return this.sendResult(ws, id, { ok: true }); }
+      case 'mcp.logs': return this.sendResult(ws, id, params.name ? this.mcpHost.getServerLogs(String(params.name)) : this.mcpHost.getAllLogs());
+      case 'mcp.exportConfigs': return this.sendResult(ws, id, this.mcpHost.exportConfigs());
 
       // ---- Sandbox ----
       case 'sandbox.status': {

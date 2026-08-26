@@ -14,6 +14,9 @@ interface ManagedServer {
   client: Client;
   transport: import('@modelcontextprotocol/sdk/shared/transport.js').Transport;
   tools: Map<string, McpTool>;
+  disconnectedAt?: number;
+  reconnectAttempts: number;
+  logs: string[];
 }
 
 /**
@@ -70,7 +73,7 @@ export class McpHost {
       });
     }
 
-    this.servers.set(name, { name, config, client, transport, tools });
+    this.servers.set(name, { name, config, client, transport, tools, reconnectAttempts: 0, logs: [`Connected at ${new Date().toISOString()}`] });
     this.emitStatus();
   }
 
@@ -121,6 +124,87 @@ export class McpHost {
       connected: true,
       toolCount: s.tools.size,
     }));
+  }
+
+  // ---- Auto-reconnect ----
+
+  async autoReconnect(): Promise<void> {
+    const disconnected = [...this.servers.entries()].filter(([, s]) => s.disconnectedAt);
+    for (const [name, server] of disconnected) {
+      const delay = Math.min(1000 * Math.pow(2, server.reconnectAttempts), 30000);
+      server.reconnectAttempts++;
+      server.logs.push(`Reconnect attempt ${server.reconnectAttempts} in ${delay}ms`);
+      setTimeout(async () => {
+        try {
+          await this.connect(name, server.config);
+          server.logs.push(`Reconnected successfully`);
+        } catch (e) {
+          server.logs.push(`Reconnect failed: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }, delay);
+    }
+  }
+
+  // ---- Health check ----
+
+  async healthCheck(): Promise<{ name: string; healthy: boolean; error?: string }[]> {
+    const results: { name: string; healthy: boolean; error?: string }[] = [];
+    for (const [name, server] of this.servers) {
+      try {
+        await server.client.listTools();
+        results.push({ name, healthy: true });
+      } catch (e) {
+        server.disconnectedAt = Date.now();
+        results.push({ name, healthy: false, error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    return results;
+  }
+
+  // ---- Tool call retry ----
+
+  async callToolWithRetry(fullName: string, args: Record<string, unknown>, retries = 2): Promise<McpCallResult> {
+    let lastError: McpCallResult | null = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const result = await this.callTool(fullName, args);
+      if (result.ok) return result;
+      lastError = result;
+      if (attempt < retries) {
+        const delay = Math.min(500 * Math.pow(2, attempt), 5000);
+        await new Promise((r) => setTimeout(r, delay));
+        // Try reconnecting the server
+        const [serverName] = fullName.split('::');
+        const server = this.servers.get(serverName);
+        if (server?.disconnectedAt) {
+          try { await this.connect(serverName, server.config); } catch { /* ignore */ }
+        }
+      }
+    }
+    return lastError!;
+  }
+
+  // ---- Server logs ----
+
+  getServerLogs(name: string): string[] {
+    return this.servers.get(name)?.logs ?? [];
+  }
+
+  getAllLogs(): Record<string, string[]> {
+    const out: Record<string, string[]> = {};
+    for (const [name, server] of this.servers) {
+      out[name] = server.logs;
+    }
+    return out;
+  }
+
+  // ---- Config import/export ----
+
+  exportConfigs(): Record<string, McpServerConfig> {
+    const out: Record<string, McpServerConfig> = {};
+    for (const [name, server] of this.servers) {
+      out[name] = server.config;
+    }
+    return out;
   }
 
   private emitStatus(): void {

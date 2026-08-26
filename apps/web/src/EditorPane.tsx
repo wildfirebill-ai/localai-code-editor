@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import { useApp } from './state';
 import { languageForFile, openInLanguageServer, changedInLanguageServer } from './lsp';
+import { FindReplace } from './FindReplace';
 
 const BINARY_EXTS = new Set([
   'png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'pdf', 'zip', 'gz', 'tar',
@@ -18,6 +19,7 @@ export function EditorPane({ path }: { path: string }) {
   const [binary, setBinary] = useState(false);
   const [size, setSize] = useState(0);
   const [encoding, setEncoding] = useState('utf-8');
+  const [showFindReplace, setShowFindReplace] = useState(false);
   const [preview, setPreview] = useState(false);
   const uriRef = useRef<string | null>(null);
   /** Latest dirty state for effects that must not clobber user edits. */
@@ -89,6 +91,7 @@ export function EditorPane({ path }: { path: string }) {
 
   const handleMount: OnMount = (editor, monaco) => {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => void save());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH, () => setShowFindReplace((v) => !v));
 
     // Bracket matching & auto-close
     editor.updateOptions({
@@ -148,6 +151,9 @@ export function EditorPane({ path }: { path: string }) {
       )}
       {path && loaded && !binary && isMarkdown && preview && (
         <div className="md-preview" dangerouslySetInnerHTML={{ __html: mdToHtml(content) }} />
+      )}
+      {showFindReplace && path && loaded && !binary && (
+        <FindReplace filePath={path} content={content} />
       )}
       {path && loaded && !binary && !(isMarkdown && preview) && (
         <Editor
